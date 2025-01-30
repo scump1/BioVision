@@ -121,7 +121,7 @@ class UIPumpWidget(QWidget):
         
         self.data.add_data(self.data.Keys.PUMP_LOAD_VOLUME, load_volume, self.data.Namespaces.PUMP)
         self.pump.add_task(self.pump.States.LOAD_FLUID, 0)
-    
+
     def unload_button_action(self):
         
         unload_volume = self.volume_unload.value()

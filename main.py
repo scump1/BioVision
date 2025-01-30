@@ -14,7 +14,7 @@ from controller.device_handler.devices.pump_device.pump import Pump
 class ApplicationCoordinator:
 
     _instance = None
-
+    
     def __new__(cls):
 
         if cls._instance is None:
