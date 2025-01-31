@@ -9,6 +9,84 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from controller.device_handler.devices.arduino_device.arduino import Arduino
 from controller.device_handler.devices.camera_device.states.abc_state_baseclass import State
 
+class MTEmptyCalibrationState(State):
+    
+    def run_logic(self):
+        try:
+            self.take_single_image()
+        except Exception as e:
+            self.logger.warning(f"Error in taking empty calibration image: {e}.")
+        
+    def take_single_image(self):
+    
+        try:
+            dir_path = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_CALIBRATION, namespace=self.data.Namespaces.MIXING_TIME)
+            
+            if not dir_path:
+                return
+            
+            self.device.cam.stream_on()
+            raw_img = self.device.cam.data_stream[0].get_image()
+            
+            if raw_img is not None:
+                rgb_image = raw_img.convert("RGB")
+                numpy_image = rgb_image.get_numpy_array()
+                numpy_image = numpy_image[600:2500, 1800:2175]
+                
+                filename = f"EmptyCalibration.bmp"
+                filepath = os.path.join(dir_path, filename)
+                
+                cv2.imwrite(filepath, numpy_image)
+                
+                self.data.add_data(self.data.Keys.EMPTY_CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MIXING_TIME)
+                
+            else:
+                self.logger.warning("Failed to capture image: No data received from capture stream.")
+                
+        except Exception as e:
+            self.logger.warning(f"Image capturing not working properly: {e}.")
+            
+        finally:
+            self.device.cam.stream_off()
+
+class MTFilledCalibrationState(State):
+    
+    def run_logic(self):
+        
+        self.take_single_image()
+        
+    def take_single_image(self):
+    
+        try:
+            dir_path = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_CALIBRATION, namespace=self.data.Namespaces.MIXING_TIME)
+            
+            if not dir_path:
+                return
+            
+            self.device.cam.stream_on()
+            raw_img = self.device.cam.data_stream[0].get_image()
+            
+            if raw_img is not None:
+                rgb_image = raw_img.convert("RGB")
+                numpy_image = rgb_image.get_numpy_array()
+                numpy_image = numpy_image[600:2500, 1800:2175]
+                
+                filename = f"FilledCalibration.bmp"
+                filepath = os.path.join(dir_path, filename)
+                
+                cv2.imwrite(filepath, numpy_image)
+                
+                self.data.add_data(self.data.Keys.FILLED_CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MIXING_TIME)
+                
+            else:
+                self.logger.warning("Failed to capture image: No data received from capture stream.")
+                
+        except Exception as e:
+            self.logger.warning(f"Image capturing not working properly: {e}.")
+            
+        finally:
+            self.device.cam.stream_off()
+
 class LiveViewState(State):
     
     def run_logic(self):

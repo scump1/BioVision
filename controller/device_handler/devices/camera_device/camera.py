@@ -5,7 +5,7 @@ import gxipy as gx
 
 from enum import Enum
 
-from controller.device_handler.devices.camera_device.states.all_states import HealthCheckState, ImageCaptureState, LiveViewState, CalibrationImageState, SetSettingsState
+from controller.device_handler.devices.camera_device.states.all_states import HealthCheckState, ImageCaptureState, LiveViewState, CalibrationImageState, SetSettingsState, MTEmptyCalibrationState, MTFilledCalibrationState
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from model.data.configuration_manager import ConfigurationManager
 from operator_mod.logger.global_logger import Logger
@@ -23,13 +23,17 @@ class Camera(Device):
         LIVE_VIEW_STATE = 3
         CALIBRATION_IMAGE_STATE = 4
         CUSTOM_SETTINGS_SETTER = 5
+        MT_EMPTY_CALIBRATION_STATE = 6
+        MT_FILLED_CALIBRATION_STATE = 7
     
     state_classes = {
         States.HEALTH_CHECK_STATE: HealthCheckState,
         States.IMAGE_CAPTURE_STATE: ImageCaptureState,
         States.LIVE_VIEW_STATE: LiveViewState,
         States.CALIBRATION_IMAGE_STATE: CalibrationImageState,
-        States.CUSTOM_SETTINGS_SETTER: SetSettingsState
+        States.CUSTOM_SETTINGS_SETTER: SetSettingsState,
+        States.MT_EMPTY_CALIBRATION_STATE: MTEmptyCalibrationState,
+        States.MT_FILLED_CALIBRATION_STATE: MTFilledCalibrationState
         # Add more states here
     }
 

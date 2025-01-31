@@ -1,4 +1,5 @@
 import time
+import os
 
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
@@ -14,6 +15,7 @@ class UIMixingTime(QWidget):
     progress_signal = Signal(int, str)
 
     def __init__(self):
+        
         super().__init__()
         
         self.data = InMemoryData()
@@ -22,6 +24,9 @@ class UIMixingTime(QWidget):
         self.mixingtime_handler = MixingTimeHandler()
         
         self.progress_signal.connect(self._progressbar_update)
+        
+        # State switches
+        self.calibration_done = False
         
     def setupForm(self):
     
@@ -205,14 +210,45 @@ class UIMixingTime(QWidget):
         time.sleep(1)
         
         self.stacked_layout.setCurrentIndex(1)
+        self.progress_signal.emit(0, "")
     
     def _empty_ractor_button_action(self):
         
+        ### Here we need to take the calibration pictures of the empty reactor
+        self.progress_signal.emit(0, "Taking empty calibration images...")
+        self.mixingtime_handler.take_empty_calibration()
+        done = self._wait_for_empty_calibration()
+        
+        if not done:
+            self._reset_mixing_time_routione()
+            return
+        
+        # This means we have done a calibration and now flip back the flag to false
+        self.calibration_done = False
+        self.progress_signal.emit(100, "Empty calibration done...")
+        time.sleep(2)
+        
         self.stacked_layout.setCurrentIndex(2)
+        self.progress_signal.emit(0, "")
         
     def _filled_reactor_button_action(self):
         
+        ### We need to take the filled calibration pictures of the reactor
+        self.progress_signal.emit(0, "Taking filled calibration images...")
+        self.mixingtime_handler.take_filled_calibration()
+        done = self._wait_for_filled_calibration()
+        
+        if not done:
+            self._reset_mixing_time_routione()
+            return
+        
+        # This means we have done a calibration and now flip back the flag to false
+        self.calibration_done = False
+        self.progress_signal.emit(100, "Filled calibration done...")
+        time.sleep(2)
+        
         self.stacked_layout.setCurrentIndex(3)
+        self.progress_signal.emit(0, "")        
         
     def _start_mixing_button_action(self):
         pass
@@ -220,6 +256,47 @@ class UIMixingTime(QWidget):
     def _progressbar_update(self, value: int, text: str):
         self.progressbar.setValue(value)
         self.progressbar.setFormat(text)
+        
+    def _wait_for_empty_calibration(self, timeout: int = 30):
+        
+        while (self.calibration_done == False) and timeout >= 0:
+            self.progress_signal.emit(30 - timeout, f"Waiting for calibration to finish... {timeout}") 
+            
+            path = self.data.get_data(self.data.Keys.EMPTY_CALIBRATION_IMAGE_PATH, self.data.Namespaces.MIXING_TIME)
+            if path is not None and os.path.exists(path):
+                self.calibration_done = True
+                break
+
+            timeout -= 1
+            time.sleep(1)
+            
+        return self.calibration_done
+    
+    def _wait_for_filled_calibration(self, timeout: int = 30):
+        
+        while (self.calibration_done == False) and timeout >= 0:
+            self.progress_signal.emit(30 - timeout, f"Waiting for calibration to finish... {timeout}")
+            
+            path = self.data.get_data(self.data.Keys.FILLED_CALIBRATION_IMAGE_PATH, self.data.Namespaces.MIXING_TIME)
+            if path is not None and os.path.exists(path):
+                self.calibration_done = True
+                break
+
+            timeout -= 1
+            time.sleep(1)
+            
+        return self.calibration_done
+    
+    def _reset_mixing_time_routione(self):
+        
+        from view.main.mainframe import MainWindow
+        instance = MainWindow.get_instance()
+            
+        QMessageBox.warning(instance, "Error", "Something went wrong. Consult Leon...", QMessageBox.StandardButton.Ok)
+        
+        self.stacked_layout.setCurrentIndex(0)
+        self._empty_checbutton_action(False)
+        self._filled_checbutton_action(False)
     
     def closeEvent(self, event):
         

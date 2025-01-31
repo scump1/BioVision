@@ -117,6 +117,9 @@ class InMemoryData:
         CURRENT_MIXINGTIME_FOLDER_IMAGES = "CurrentMixingTimeFolderImages"
         CURRENT_MIXINGTIME_FOLDER_DATA = "CurrentMixingTimeFolderData"
         
+        EMPTY_CALIBRATION_IMAGE_PATH = "EmptyCalibrationImagePath"
+        FILLED_CALIBRATION_IMAGE_PATH = "FilledCalibrationImagePath"
+        
         # Project Management
         PROJECT_FOLDER_CONFIG = "ProjectFolderConfig"
         PROJECT_FOLDER_MEASUREMENT = "ProjectFolderMeasurement"
