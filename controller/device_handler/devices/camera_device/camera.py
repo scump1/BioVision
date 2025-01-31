@@ -5,7 +5,7 @@ import gxipy as gx
 
 from enum import Enum
 
-from controller.device_handler.devices.camera_device.states.all_states import HealthCheckState, ImageCaptureState, LiveViewState, CalibrationImageState, SetSettingsState, MTEmptyCalibrationState, MTFilledCalibrationState
+from controller.device_handler.devices.camera_device.states.all_states import HealthCheckState, ImageCaptureState, LiveViewState, CalibrationImageState, SetSettingsState, MTEmptyCalibrationState, MTFilledCalibrationState, MTImagecaptureState
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from model.data.configuration_manager import ConfigurationManager
 from operator_mod.logger.global_logger import Logger
@@ -25,6 +25,7 @@ class Camera(Device):
         CUSTOM_SETTINGS_SETTER = 5
         MT_EMPTY_CALIBRATION_STATE = 6
         MT_FILLED_CALIBRATION_STATE = 7
+        MT_IMAGE_CAPTURE_STATE = 8
     
     state_classes = {
         States.HEALTH_CHECK_STATE: HealthCheckState,
@@ -33,7 +34,8 @@ class Camera(Device):
         States.CALIBRATION_IMAGE_STATE: CalibrationImageState,
         States.CUSTOM_SETTINGS_SETTER: SetSettingsState,
         States.MT_EMPTY_CALIBRATION_STATE: MTEmptyCalibrationState,
-        States.MT_FILLED_CALIBRATION_STATE: MTFilledCalibrationState
+        States.MT_FILLED_CALIBRATION_STATE: MTFilledCalibrationState,
+        States.MT_IMAGE_CAPTURE_STATE: MTImagecaptureState
         # Add more states here
     }
 
@@ -56,6 +58,7 @@ class Camera(Device):
         
         # Threading events
         self.await_capture_start_event = threading.Event()
+        self.mt_await_capture_start_event = threading.Event()
         
         self._connect()
         self.setupCamera()

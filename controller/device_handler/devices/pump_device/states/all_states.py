@@ -49,4 +49,17 @@ class UnloadFluidState(State):
         volume = self.data.get_data(self.data.Keys.PUMP_UNLOAD_VOLUME, namespace=self.data.Namespaces.PUMP)
         flow = self.data.get_data(self.data.Keys.PUMP_FLOW, namespace=self.data.Namespaces.PUMP)
         
+        if flow is None or flow == 0:
+            flow = self.device.max_flowrate
+            self.device.unload_fluid(volume)
+        
         self.device.unload_fluid(volume, flow)
+        
+class MTUnloadFluidState(State):
+    
+    def run_logic(self):
+        
+        volume = self.data.get_data(self.data.Keys.PUMP_UNLOAD_VOLUME, namespace=self.data.Namespaces.PUMP)
+        
+        self.device.await_mt_injection_event.wait()
+        self.device.unload_fluid(volume, self.device.max_flowrate)

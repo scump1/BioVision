@@ -87,6 +87,70 @@ class MTFilledCalibrationState(State):
         finally:
             self.device.cam.stream_off()
 
+class MTImagecaptureState(State):
+    
+    def run_logic(self):
+        
+        try:
+            # Scheduler setup
+            self.scheduler = BackgroundScheduler()
+            
+            self.overall_count = 0
+            
+            self.device.mt_await_capture_start_event.wait()
+            self.start_img_cap(10, 1)
+            
+            while datetime.datetime.now() < self.runtime_target and not self.terminated:
+                self.logger.info("Camera - Image Capturing working.")
+                time.sleep(1)
+                
+        except Exception as e:
+            self.logger.warning(f"Error in capturing image: {e}.")
+        finally:
+            self.terminate_img_cap()
+        
+    def start_img_cap(self, img_per_int: int, interval: int):
+        
+        # First we open up the cam stream
+        self.device.cam.stream_on()
+        
+        path = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_IMAGES, namespace=self.data.Namespaces.MIXING_TIME)
+        
+        self.scheduler.add_job(self.single_img_capture, 'interval', args=[img_per_int, path], seconds=interval)
+        self.scheduler.start()
+
+    def terminate_img_cap(self):
+        
+        if self.scheduler:
+            self.scheduler.shutdown()
+            
+        self.device.cam.stream_off()
+        
+    def single_img_capture(self, img_per_int: int, path: str):
+        
+        img_count = 0
+        self.logger.info("Trying to capture Image.")
+
+        while img_per_int > 0:
+            raw_img = self.device.cam.data_stream[0].get_image()
+            
+            if raw_img is not None:
+                rgb_image = raw_img.convert("RGB")
+                numpy_image = rgb_image.get_numpy_array()
+                numpy_image = numpy_image[600:2500, 1800:2175]
+                
+                filename = f"MT_Image_{self.overall_count}.bmp"
+                filepath = os.path.join(path, filename)
+                
+                cv2.imwrite(filepath, numpy_image)
+
+            else:
+                self.logger.warning("Failed to capture image: No data received from capture stream.")
+                
+            img_count += 1
+            self.overall_count += 1
+            img_per_int -= 1
+
 class LiveViewState(State):
     
     def run_logic(self):

@@ -1,5 +1,6 @@
 import time
 import os
+from uuid import uuid4
 
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
@@ -8,6 +9,7 @@ from PySide6.QtCore import *
 from operator_mod.measurements.mixing_time_handler import MixingTimeHandler
 
 from operator_mod.logger.global_logger import Logger
+from operator_mod.logger.progress_logger import ProgressLogger
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 
 class UIMixingTime(QWidget):
@@ -193,13 +195,13 @@ class UIMixingTime(QWidget):
         pump = self.data.get_data(self.data.Keys.PUMP, self.data.Namespaces.DEVICES)
         camera = self.data.get_data(self.data.Keys.CAMERA, self.data.Namespaces.DEVICES)
         
-        # if not pump or not camera:
+        if not pump or not camera:
             
-        #     QMessageBox.information(instance, "Error", "Please connect a pump and a camera first.", QMessageBox.StandardButton.Ok)
+            QMessageBox.information(instance, "Error", "Please connect a pump and a camera first.", QMessageBox.StandardButton.Ok)
             
-        #     self.progress_signal.emit(0, "")
-        #     self.startpage.setEnabled(True)
-        #     return 
+            self.progress_signal.emit(0, "")
+            self.startpage.setEnabled(True)
+            return 
         
         self.progress_signal.emit(50, "Devices healthy...")
         self.progress_signal.emit(50, "Setting filestructures...")
@@ -220,7 +222,7 @@ class UIMixingTime(QWidget):
         done = self._wait_for_empty_calibration()
         
         if not done:
-            self._reset_mixing_time_routione()
+            self._reset_mixing_time_routine()
             return
         
         # This means we have done a calibration and now flip back the flag to false
@@ -239,7 +241,7 @@ class UIMixingTime(QWidget):
         done = self._wait_for_filled_calibration()
         
         if not done:
-            self._reset_mixing_time_routione()
+            self._reset_mixing_time_routine()
             return
         
         # This means we have done a calibration and now flip back the flag to false
@@ -251,7 +253,30 @@ class UIMixingTime(QWidget):
         self.progress_signal.emit(0, "")        
         
     def _start_mixing_button_action(self):
-        pass
+        
+        # we start the runner here and start a timer to check the progress logger
+        self.progress_signal.emit(0, "Starting mixing routine...")
+        
+        handle = uuid4()
+        self.mixingtime_handler.start_mixing_time(handle, self.massflow_value.value(), self.volume_value.value())
+        
+        # the used progress tracker for the mixing time
+        progress = ProgressLogger(handle)
+        
+        self.timer = QTimer()
+        self.timer.timeout.connect(lambda: self._check_progress(progress))
+        self.timer.start(1000)
+    
+    def _check_progress(self, progress: ProgressLogger):
+        
+        _, target, current = progress.get_progress('mixing_time')
+    
+        value = int((current / target) * 100)
+        self.progress_signal.emit(value, "Mixing in progress...")
+        
+        if value == 100:
+            self.progress_signal.emit(100, "Mixing done...")
+            self.timer.stop()
     
     def _progressbar_update(self, value: int, text: str):
         self.progressbar.setValue(value)
@@ -287,8 +312,10 @@ class UIMixingTime(QWidget):
             
         return self.calibration_done
     
-    def _reset_mixing_time_routione(self):
-        
+    def _reset_mixing_time_routine(self) -> None:
+        """
+        This is meant for error catching. Not for actually resetting the routine.
+        """
         from view.main.mainframe import MainWindow
         instance = MainWindow.get_instance()
             
@@ -301,6 +328,8 @@ class UIMixingTime(QWidget):
     def closeEvent(self, event):
         
         try:
+            if self.timer.isActive():
+                self.timer.stop()
 
             from view.main.mainframe import MainWindow
             inst = MainWindow.get_instance()
