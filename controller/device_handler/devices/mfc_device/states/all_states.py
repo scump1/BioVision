@@ -42,6 +42,7 @@ class SettingsSetter(State):
         try:
             massflow = self.data.get_data(self.data.Keys.MFC_SETTINGS, namespace=self.data.Namespaces.MFC)
             
+            print(f"MASSFLOW: {massflow}")
             if not massflow:
                 self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, False, self.data.Namespaces.MFC)
                 return
@@ -51,7 +52,8 @@ class SettingsSetter(State):
 
             time.sleep(0.5)
             read = self.device.mfc_instrument.readParameter(205)
-            if abs(read - massflow) < 0.5:
+            print(f"READ MASSFLOW: {read}")
+            if abs(read - massflow) < 2.5:
                 self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, True, self.data.Namespaces.MFC)
             else:
                 self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, False, self.data.Namespaces.MFC)

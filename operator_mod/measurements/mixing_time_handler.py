@@ -24,9 +24,9 @@ class MixingTimeHandler:
         
         self.camera.add_task(self.camera.States.MT_FILLED_CALIBRATION_STATE, 0)
         
-    def start_mixing_time(self, name: str, airflow: float, injection_volume: int):
+    def start_mixing_time(self, handle: str, airflow: float, injection_volume: int):
         
-        self.runner = MixingTimeRunner(name, airflow, injection_volume)
+        self.runner = MixingTimeRunner(handle, airflow, injection_volume)
         self.runner.start()
         
     def stop_mixing_time(self):

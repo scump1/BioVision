@@ -8,6 +8,8 @@ from PySide6.QtCore import *
 
 from operator_mod.measurements.mixing_time_handler import MixingTimeHandler
 
+from controller.device_handler.devices.pump_device.pump import Pump
+
 from operator_mod.logger.global_logger import Logger
 from operator_mod.logger.progress_logger import ProgressLogger
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
@@ -22,6 +24,8 @@ class UIMixingTime(QWidget):
         
         self.data = InMemoryData()
         self.logger = Logger("Application").logger
+        
+        self.pump = Pump.get_instance()
         
         self.mixingtime_handler = MixingTimeHandler()
         
@@ -254,11 +258,24 @@ class UIMixingTime(QWidget):
         self.progress_signal.emit(0, "")        
         
     def _start_mixing_button_action(self):
+        """
+        Exectues the last check-ups and start the mixing time runner thread.
+        """
+        fill_level_pump = self.pump.fill_level
+        
+        if fill_level_pump <= self.volume_value.value():
+            from view.main.mainframe import MainWindow
+            instance = MainWindow.get_instance()
+            
+            instance.menubar.actionDevicePump.trigger()
+            QMessageBox.information(instance, "Pump Volume", "Please aspirate solution volume to inject into the reactor before starting the mixing time measurement.", QMessageBox.StandardButton.Yes)
+
+            return
         
         # we start the runner here and start a timer to check the progress logger
         self.progress_signal.emit(0, "Starting mixing routine...")
         
-        handle = uuid4()
+        handle = str(uuid4())
         self.mixingtime_handler.start_mixing_time(handle, self.massflow_value.value(), self.volume_value.value())
         
         time.sleep(2)

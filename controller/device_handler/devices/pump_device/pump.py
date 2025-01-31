@@ -153,7 +153,7 @@ class Pump(Device):
 
         self.pump.set_flow_unit(qmixpump.UnitPrefix.micro, qmixpump.VolumeUnit.litres, qmixpump.TimeUnit.per_second)
         max_ul_s = self.pump.get_flow_rate_max()
-        self.logger.info(f"Max. flow ml/s: {max_ul_s}.")
+        self.logger.info(f"Max. flow ul/s: {max_ul_s}.")
     
     def _syringeconfig(self):
         """

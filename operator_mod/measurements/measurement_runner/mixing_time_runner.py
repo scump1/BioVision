@@ -42,7 +42,8 @@ class MixingTimeRunner(threading.Thread):
         
     def run(self):
         
-        self.setup()
+        print("RUNNING PREPARATION")
+        self.prepare()
         timer = 0
  
         ### here the MFC already has the massflow set, so now we start the image cap and after 2.5 seconds the injection
@@ -63,7 +64,7 @@ class MixingTimeRunner(threading.Thread):
         
         self.cleanup()
         
-    def setup(self):
+    def prepare(self):
         """
         Brings the camera, mfc and pump into the correct state for the measurement. Alles devices have a threading.Event() to wait for their start.
         """
@@ -71,6 +72,7 @@ class MixingTimeRunner(threading.Thread):
         self.camera.add_task(self.camera.States.MT_IMAGE_CAPTURE_STATE, self.runtime)
         
         # Pump
+        print(f"PUMP INJECTION VOLUME: {self.injection_volume}")
         self.data.add_data(self.data.Keys.PUMP_UNLOAD_VOLUME, self.injection_volume, namespace=self.data.Namespaces.PUMP)
         self.pump.add_task(self.pump.States.MT_INJECTION_UNLOAD, 0)
         
@@ -78,8 +80,10 @@ class MixingTimeRunner(threading.Thread):
         self.data.add_data(self.data.Keys.MFC_SETTINGS, self.airflow, namespace=self.data.Namespaces.MFC)
         self.mfc.add_task(self.mfc.States.SETTING_SETTER_STATE, 0)
         
+        time.sleep(1)
         # Check for success
-        if not self.data.get_data(self.data.Keys.MFC_SETTINGS_SUCCESS, self.data.Namespaces.MFC):
+        success : bool = self.data.get_data(self.data.Keys.MFC_SETTINGS_SUCCESS, self.data.Namespaces.MFC)
+        if not success:
             self.stop_event.set()
             
         # The progress logger

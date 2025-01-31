@@ -31,7 +31,7 @@ class MTEmptyCalibrationState(State):
             if raw_img is not None:
                 rgb_image = raw_img.convert("RGB")
                 numpy_image = rgb_image.get_numpy_array()
-                numpy_image = numpy_image[600:2500, 1800:2175]
+                numpy_image = numpy_image
                 
                 filename = f"EmptyCalibration.bmp"
                 filepath = os.path.join(dir_path, filename)
@@ -69,7 +69,7 @@ class MTFilledCalibrationState(State):
             if raw_img is not None:
                 rgb_image = raw_img.convert("RGB")
                 numpy_image = rgb_image.get_numpy_array()
-                numpy_image = numpy_image[600:2500, 1800:2175]
+                numpy_image = numpy_image
                 
                 filename = f"FilledCalibration.bmp"
                 filepath = os.path.join(dir_path, filename)
@@ -98,7 +98,7 @@ class MTImagecaptureState(State):
             self.overall_count = 0
             
             self.device.mt_await_capture_start_event.wait()
-            self.start_img_cap(10, 1)
+            self.start_img_cap(6, 1)
             
             while datetime.datetime.now() < self.runtime_target and not self.terminated:
                 self.logger.info("Camera - Image Capturing working.")
@@ -136,7 +136,7 @@ class MTImagecaptureState(State):
             if raw_img is not None:
                 rgb_image = raw_img.convert("RGB")
                 numpy_image = rgb_image.get_numpy_array()
-                numpy_image = numpy_image[600:2500, 1800:2175]
+                numpy_image = numpy_image
                 
                 filename = f"MT_Image_{self.overall_count}.bmp"
                 filepath = os.path.join(path, filename)
