@@ -128,7 +128,6 @@ class MTImagecaptureState(State):
         
     def single_img_capture(self, img_per_int: int, path: str):
         
-        img_count = 0
         self.logger.info("Trying to capture Image.")
 
         while img_per_int > 0:
@@ -147,7 +146,6 @@ class MTImagecaptureState(State):
             else:
                 self.logger.warning("Failed to capture image: No data received from capture stream.")
                 
-            img_count += 1
             self.overall_count += 1
             img_per_int -= 1
 

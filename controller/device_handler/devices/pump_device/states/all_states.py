@@ -51,7 +51,6 @@ class UnloadFluidState(State):
         
         if flow is None or flow == 0:
             flow = self.device.max_flowrate
-            self.device.unload_fluid(volume)
         
         self.device.unload_fluid(volume, flow)
         

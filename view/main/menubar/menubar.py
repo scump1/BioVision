@@ -146,6 +146,7 @@ class MenuBar(QMenuBar):
                 
         if self.data.get_data(self.data.Keys.PROJECT_PATH, namespace=self.data.Namespaces.PROJECT_MANAGEMENT) is not None:
             state = False
+            self.menuMixingTime.setEnabled(not state)
             self.menuMeasurement.setEnabled(not state)
             self.live_view.setEnabled(not state)
             self.actionClose.setEnabled(not state)
@@ -156,6 +157,7 @@ class MenuBar(QMenuBar):
             
         elif self.data.get_data(self.data.Keys.PROJECT_PATH, namespace=self.data.Namespaces.PROJECT_MANAGEMENT) is None:
             state = True
+            self.menuMixingTime.setEnabled(not state)
             self.menuMeasurement.setEnabled(not state)
             self.live_view.setEnabled(not state)
             self.actionClose.setEnabled(not state)
@@ -422,10 +424,10 @@ class MenuBar(QMenuBar):
         from view.mixing_time_framework.mixing_time_frame import UIMixingTime
 
         # First we check if the devices are even connected
-        # device = self.data.get_data(self.data.Keys.PUMP, self.data.Namespaces.DEVICES)
-        # if not device:
-        #     QMessageBox.information(MainWindow.get_instance(), "No Pump", "There is currently no Pump connected.")
-        #     return
+        device = self.data.get_data(self.data.Keys.PUMP, self.data.Namespaces.DEVICES)
+        if not device:
+            QMessageBox.information(MainWindow.get_instance(), "No Pump", "There is currently no Pump connected.")
+            return
 
         main_inst = MainWindow.get_instance()
 
