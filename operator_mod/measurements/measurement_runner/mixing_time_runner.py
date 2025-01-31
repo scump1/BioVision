@@ -42,7 +42,6 @@ class MixingTimeRunner(threading.Thread):
         
     def run(self):
         
-        print("RUNNING PREPARATION")
         self.prepare()
         timer = 0
  
@@ -72,7 +71,6 @@ class MixingTimeRunner(threading.Thread):
         self.camera.add_task(self.camera.States.MT_IMAGE_CAPTURE_STATE, self.runtime)
         
         # Pump
-        print(f"PUMP INJECTION VOLUME: {self.injection_volume}")
         self.data.add_data(self.data.Keys.PUMP_UNLOAD_VOLUME, self.injection_volume, namespace=self.data.Namespaces.PUMP)
         self.pump.add_task(self.pump.States.MT_INJECTION_UNLOAD, 0)
         

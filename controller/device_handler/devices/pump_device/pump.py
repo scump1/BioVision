@@ -159,8 +159,8 @@ class Pump(Device):
         """
         Sets the intended syringe configuration to the pump.
         """
-        inner_diameter_set = 8.0
-        piston_stroke_set = 50.0
+        inner_diameter_set = 1.456
+        piston_stroke_set = 60.0
         self.pump.set_syringe_param(inner_diameter_set, piston_stroke_set)
         diameter, stroke = self.pump.get_syringe_param()
         
