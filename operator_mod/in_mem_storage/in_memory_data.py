@@ -110,6 +110,13 @@ class InMemoryData:
         LIGHTMODE = "ArduinoLightmode"
         CAMERA_LIGHTSWITCHING = "CameraLightmode"
         
+        # MIXING TIME
+        CURRENT_MIXINGTIME_FOLDER = "CurrentMixingTimeFolder"
+        
+        CURRENT_MIXINGTIME_FOLDER_CALIBRATION = "CurrentMixingTimeFolderCalibration"
+        CURRENT_MIXINGTIME_FOLDER_IMAGES = "CurrentMixingTimeFolderImages"
+        CURRENT_MIXINGTIME_FOLDER_DATA = "CurrentMixingTimeFolderData"
+        
         # Project Management
         PROJECT_FOLDER_CONFIG = "ProjectFolderConfig"
         PROJECT_FOLDER_MEASUREMENT = "ProjectFolderMeasurement"
@@ -142,6 +149,7 @@ class InMemoryData:
         CONTROLLER = "Controller"
         DEVICES = "Devices"
         MEASUREMENT = "Measurement"
+        MIXING_TIME = "MixingTime"
         PROJECT_MANAGEMENT = "ProjectManagement"
         DEFAULT = "default"
         

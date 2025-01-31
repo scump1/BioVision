@@ -6,7 +6,7 @@ from model.measurements.measurement_creator import MeasurementCreator
 from operator_mod.measurements.measurement_runner.measurement_runner import MeasurementRunner
 from view.liveviewForm.liveview_form import LiveViewForm
 
-from model.measurements.routine_system.routine_system import RoutineSystem, RoutineData
+from model.measurements.routine_system.routine_system import RoutineSystem
 
 class MeasurementHandler:
     """Handles the creation and setup of a measurement. Creates the measurement folder, and every folder for a slot in the routine with calibration and result folder. Starts the Measurement Runner. 
