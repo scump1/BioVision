@@ -146,6 +146,7 @@ class UIMixingTime(QWidget):
         fill_layout.addWidget(checkbutton)
         
         self.fill_reactor_fulfilled = QPushButton("Reactor is filled")
+        self.fill_reactor_fulfilled.setEnabled(False)
         self.fill_reactor_fulfilled.clicked.connect(self._filled_reactor_button_action)
         fill_layout.addWidget(self.fill_reactor_fulfilled)
         
@@ -260,6 +261,7 @@ class UIMixingTime(QWidget):
         handle = uuid4()
         self.mixingtime_handler.start_mixing_time(handle, self.massflow_value.value(), self.volume_value.value())
         
+        time.sleep(2)
         # the used progress tracker for the mixing time
         progress = ProgressLogger(handle)
         

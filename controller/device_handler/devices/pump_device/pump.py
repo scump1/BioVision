@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append("C:\\Users\\leon_\\AppData\\Local\\Programs\\CETONI_SDK\\lib\\python")
+sys.path.append("C:\\Users\\L. Pastwa\\AppData\\Local\\Programs\\CETONI_SDK\\lib\\python")
 
 from qmixsdk import qmixbus # type: ignore
 from qmixsdk import qmixpump # type: ignore
@@ -53,10 +53,10 @@ class Pump(Device):
 
         self.await_mt_injection_event = threading.Event()
 
-        #self._connect()
-        #self._start_pump()
+        self._connect()
+        self._start_pump()
         
-        #self._fill_level = self.pump.get_fill_level() # retrieveing after Bus init
+        self._fill_level = self.pump.get_fill_level() # retrieveing after Bus init
         
     def _connect(self):
         """
