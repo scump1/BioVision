@@ -103,20 +103,23 @@ class LightSwitch(State):
             try:
                 
                 lightmode = self.data.get_data(self.data.Keys.LIGHTMODE, self.data.Namespaces.MEASUREMENT)
+                position = None
                 
                 if lightmode == False:
                     position = 0
-                else:
-                    position = 180
+                elif lightmode == True:
+                    position = 1
                     
+                else:
+                    return    
+                
                 self.device.serial_con.write('S\n'.encode())
                 self.device.serial_con.write(f"{position}\n".encode())
-                time.sleep(1)
                 
                 if self._wait_for_response(expected_response=position):
                     self.logger.info("Light switch set.")
                 else:
-                    self.logger.warning(f"Could not set light switch to: {position}.")
+                    self.logger.warning(f"Unexpected response: {position}.")
             except Exception as e:
                 self.logger.error(f"Error in setting light switch: {e}.")
                 

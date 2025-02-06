@@ -86,6 +86,9 @@ class InMemoryData:
         PUMP_LOAD_VOLUME = "PumpVolume"
         PUMP_FLOW = "PumpFlow"
         
+        SYRINGE_DIAMETER = "SyringeDiameter"
+        SYRINGE_LENGTH = "SyringeLength"
+        
         # MFC
         MFC_MASSFLOW = 'MFCMassflow'
         MFC_SETTINGS_SUCCESS = 'MFCSettingsSuccess'

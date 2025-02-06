@@ -14,7 +14,7 @@ from operator_mod.eventbus.event_handler import EventManager
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from controller.device_handler.devices.state_machine_template import Device
 
-from controller.device_handler.devices.pump_device.states.all_states import HealthCheckState, LoadFluidState, UnloadFluidState, MTUnloadFluidState
+from controller.device_handler.devices.pump_device.states.all_states import HealthCheckState, LoadFluidState, UnloadFluidState, MTUnloadFluidState, SyringeSetter
 
 class Pump(Device):
     
@@ -23,12 +23,14 @@ class Pump(Device):
         LOAD_FLUID = 2
         UNLOAD_FLUID = 3
         MT_INJECTION_UNLOAD = 4
+        SYRINGE_SETTER = 5
     
     state_classes = {
         States.HEALTH_CHECK_STATE: HealthCheckState,
         States.LOAD_FLUID: LoadFluidState,
         States.UNLOAD_FLUID: UnloadFluidState,
-        States.MT_INJECTION_UNLOAD: MTUnloadFluidState
+        States.MT_INJECTION_UNLOAD: MTUnloadFluidState,
+        States.SYRINGE_SETTER: SyringeSetter
         # Add more states here
     }
     
@@ -136,7 +138,7 @@ class Pump(Device):
         if flowrate >= self.max_flowrate:
             flowrate = self.max_flowrate
         
-        elif volume >= self.pump.get_fill_level():
+        if volume >= self.pump.get_fill_level():
             volume = self.pump.get_fill_level()
             
         self.pump.dispense(float(volume), float(flowrate))    
@@ -155,12 +157,12 @@ class Pump(Device):
         max_ul_s = self.pump.get_flow_rate_max()
         self.logger.info(f"Max. flow ul/s: {max_ul_s}.")
     
-    def _syringeconfig(self):
+    def _syringeconfig(self, init_diameter : float = 1.456, initi_length : float = 60.0):
         """
         Sets the intended syringe configuration to the pump.
         """
-        inner_diameter_set = 1.456
-        piston_stroke_set = 60.0
+        inner_diameter_set = init_diameter
+        piston_stroke_set = initi_length
         self.pump.set_syringe_param(inner_diameter_set, piston_stroke_set)
         diameter, stroke = self.pump.get_syringe_param()
         
@@ -191,7 +193,7 @@ class Pump(Device):
         """
         if volume and flow:
             target_fill = self.pump.get_fill_level() + volume
-            timeframe = volume/flow + 2 # two extra seconds for things to finish
+            timeframe = volume/flow + 1 # one extra seconds for things to finish
             timer = 0
             result = False
             
@@ -214,8 +216,8 @@ class Pump(Device):
         Waits the given timeframe for aspiration/dispension
         """
         if volume and flow:
-            target_fill = self.pump.get_fill_level() - volume
-            timeframe = volume/flow + 2 # two extra seconds for things to finish
+            target_fill = max(0, self.pump.get_fill_level() - volume)
+            timeframe = volume/flow + 1 # one extra seconds for things to finish
             timer = 0
             result = False
             

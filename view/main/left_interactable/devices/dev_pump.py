@@ -6,6 +6,9 @@ from operator_mod.logger.global_logger import Logger
 from controller.device_handler.devices.pump_device.pump import Pump
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 
+class SetWaiter(QThread):
+    
+    pass
 
 class UIPumpWidget(QWidget):
     
@@ -27,8 +30,17 @@ class UIPumpWidget(QWidget):
         self.info_layout = QFormLayout()
         
         self.fill_level_label = QLabel()
-        self.syringe_diameter_label = QLabel()
-        self.syringe_length_label = QLabel()
+        
+        # Adjustable syringe parameters
+        self.syringe_diameter_label = QDoubleSpinBox()
+        self.syringe_diameter_label.setRange(0, 1000)
+        self.syringe_diameter_label.setSingleStep(0.01)
+        self.syringe_diameter_label.editingFinished.connect(self._syringe_params_changed)
+        
+        self.syringe_length_label = QDoubleSpinBox()
+        self.syringe_length_label.setRange(0, 1000)
+        self.syringe_length_label.setSingleStep(0.01)
+        self.syringe_length_label.editingFinished.connect(self._syringe_params_changed)
         
         self._update_info_labels()
         
@@ -109,11 +121,6 @@ class UIPumpWidget(QWidget):
         self.mainlayout.addWidget(self.maintabwidget)
         
         self.setLayout(self.mainlayout)
-        
-        ### Timer for updating labels
-        self.timer = QTimer()
-        self.timer.timeout.connect(self._update_info_labels)
-        self.timer.start(250)
     
     def load_button_action(self):
         
@@ -136,9 +143,28 @@ class UIPumpWidget(QWidget):
         fill = self.pump.fill_level
         diameter, stroke = self.pump.syringe_params
         
+        # Blocking signals for updating the label
+        self.syringe_diameter_label.blockSignals(True)
+        self.syringe_length_label.blockSignals(True)
+        
         self.fill_level_label.setText(str(fill))
-        self.syringe_diameter_label.setText(str(diameter))
-        self.syringe_length_label.setText(str(stroke))
+        self.syringe_diameter_label.setValue(float(diameter))
+        self.syringe_length_label.setValue(float(stroke))
+        
+        self.syringe_diameter_label.blockSignals(False)
+        self.syringe_length_label.blockSignals(False)
+        
+    def _syringe_params_changed(self):
+        
+        diameter = self.syringe_diameter_label.value()
+        length = self.syringe_length_label.value()
+        
+        self.data.add_data(self.data.Keys.SYRINGE_DIAMETER, diameter, self.data.Namespaces.PUMP)
+        self.data.add_data(self.data.Keys.SYRINGE_LENGTH, length, self.data.Namespaces.PUMP)
+        
+        self.pump.add_task(self.pump.States.SYRINGE_SETTER, 0)
+        
+        self._update_info_labels()
         
     def closeEvent(self, event: QCloseEvent):
         

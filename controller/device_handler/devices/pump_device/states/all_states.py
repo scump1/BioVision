@@ -33,7 +33,21 @@ class HealthCheckState(State):
         except Exception as e:
             self.data.add_data(self.data.Keys.PUMP, False, namespace=self.data.Namespaces.DEVICES)
             self.logger.warning(f"Error in health check: {e}")
+
+class SyringeSetter(State):
+    
+    def run_logic(self):
+        
+        syringe_diameter = self.data.get_data(self.data.Keys.SYRINGE_DIAMETER, self.data.Namespaces.PUMP)
+        syringe_length = self.data.get_data(self.data.Keys.SYRINGE_LENGTH, self.data.Namespaces.PUMP)
+        
+        if type(syringe_diameter) == float and type(syringe_length) == float:
+        
+            self.device._syringeconfig(syringe_diameter, syringe_length)
             
+        else:
+            self.logger.error(f"Cloud not set syringe parameters: Diameter - {syringe_diameter}, Length - {syringe_length}.")
+
 class LoadFluidState(State):
     
     def run_logic(self):

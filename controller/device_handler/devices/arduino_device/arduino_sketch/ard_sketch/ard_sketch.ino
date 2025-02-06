@@ -9,7 +9,7 @@ WaveShare_MLX90614 IRCamera = WaveShare_MLX90614();
 #define Fan2Pin 5
 
 
-#define ServoPin 4
+#define ServoPin 3
 
 //Servo
 Servo light_servo;
@@ -41,17 +41,18 @@ void setup() {
 
 void loop() {
 
-  pollSerial();
+  pollSerial(); // We look for serial commands
   
-  calculateFanSpeed();
-  poll_temp();
+  calculateFanSpeed(); // we calculate a fan speed based on the given data
+  poll_temp(); // we poll the IR Cam Temp
 
 }
 
 void pollSerial() {
 
   if (Serial.available() > 0) {
-    char command = (char)Serial.readline();
+    char command = (char)Serial.read();
+    delay(50);
 
     switch (command) {
 
@@ -62,6 +63,7 @@ void pollSerial() {
       case 'T':
       
         if (Serial.available() > 0) {
+          delay(100);
           target_temperature = Serial.parseFloat();
           Serial.println(target_temperature);
         }
@@ -74,8 +76,10 @@ void pollSerial() {
         break;
 
       case 'S':
+      
         if (Serial.available() > 0) {
-          angle = (int)Serial.parseInt();
+          delay(100);
+          angle = Serial.parseFloat();
           Serial.println(angle);
           adjust_servo_state();
         break;
@@ -97,13 +101,13 @@ void calculateFanSpeed() {
   if (diff > 0) { // When current temperature is below target
     // Map the difference to a speed range
     //Scaling the diff *10 -> 0.1 difference would be 1
-    diff *= 10
+    diff *= 10;
     fanspeed = map(diff, 0, 10, min_fan_speed, max_fan_speed); // Adjust '10' based on how aggressively you want the fan to respond
     fanspeed = constrain(fanspeed, min_fan_speed, max_fan_speed); // Limit within min and max
   } else if (diff <= 0) { // When current temperature reaches or exceeds target
     // Decrease fan speed proportionally as temperature approaches or exceeds target
     //Scaling the diff *10
-    diff = abs(diff * 10)
+    diff = abs(diff * 10);
     fanspeed = map(diff, 0, 10, min_fan_speed, 0);
     fanspeed = constrain(fanspeed, 0, max_fan_speed);
   }

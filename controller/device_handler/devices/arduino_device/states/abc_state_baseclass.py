@@ -45,32 +45,38 @@ class State(ABC):
     def _wait_for_response(self, expected_response=None, timeout=5):
 
         start_time = time.time()
+        response = None
         
         while time.time() - start_time < timeout:
             if self.device.serial_con.in_waiting > 0:
                 response = self.device.serial_con.readline().decode().strip()
-
-                if expected_response is not None:
-                    
-                    if type(expected_response) == float:
-                        # we need to check for floating point errors and stuff
-                        if abs(expected_response - float(response)) < 1e-5:
-                            return True
-                        else:
-                            return False
-                    
-                    elif response == expected_response:
-                        return True
-                    return False
                 
-                elif response == "Y":
-                    return True
+                if response is not None:
+                    break
+                
+            if timeout > start_time:
+                self.logger.warning("Timeout condition reached.")
                 return False
-            else:
-                self.logger.info("Waiting for Arduino response...")
-                time.sleep(0.05)
                 
-        self.logger.error("Timeout waiting for Arduino response.")
+        if expected_response is not None:
+            
+            if type(expected_response) == float:
+                # we need to check for floating point errors and stuff
+                if abs(expected_response - float(response)) < 1e-5:
+                    return True
+                else:
+                    self.logger.warning(f"Discrepancy between response: {response} and expected response: {expected_response}.")
+                    return False
+            
+            elif response == expected_response:
+                return True
+            
+            else:
+                self.logger.warning(f"Discrepancy between response: {response} and expected response: {expected_response}.")
+                return False
+        
+        elif response == "Y":
+            return True
         return False
 
     def terminate(self):
