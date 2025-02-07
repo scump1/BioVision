@@ -1,9 +1,10 @@
 
+from sre_parse import State
 import propar
 import threading
 from enum import Enum
 
-from controller.device_handler.devices.mfc_device.states.all_states import HealthCheckState, SettingsSetter, PollingState, AirflowValveSwitch, ReadMassFlowState
+from controller.device_handler.devices.mfc_device.states.all_states import HealthCheckState, SettingsSetter, PollingState, ReadMassFlowState, CloseValve, OpenValve
 from controller.device_handler.devices.state_machine_template import Device
 
 from operator_mod.logger.global_logger import Logger
@@ -19,15 +20,17 @@ class MFC(Device):
         HEALTH_CHECK_STATE = 1
         SETTING_SETTER_STATE = 2
         POLL_STATE = 3
-        VALVE_SWITCH_STATE = 4
         READ_MASSFLOW_STATE = 5
+        CLOSE_VALVE = 6
+        OPEN_VALVE = 7
             
     state_classes = {
         States.HEALTH_CHECK_STATE: HealthCheckState,
         States.SETTING_SETTER_STATE: SettingsSetter,
         States.POLL_STATE: PollingState,
-        States.VALVE_SWITCH_STATE: AirflowValveSwitch,
-        States.READ_MASSFLOW_STATE: ReadMassFlowState
+        States.READ_MASSFLOW_STATE: ReadMassFlowState,
+        States.OPEN_VALVE: OpenValve,
+        States.CLOSE_VALVE: CloseValve
         # Add more states here
     }
 

@@ -249,7 +249,8 @@ class MeasurementRunner(threading.Thread):
                 elif setting.name == RoutineData.Parameter.MFC:
                     
                     massflow = setting.setting.massflow
-                    self.mfc_settings_setter(massflow)       
+                    interrupt = setting.setting.interrupt
+                    self.mfc_settings_setter(massflow, interrupt)       
                     
                 elif setting.name == RoutineData.Parameter.LIGHTMODE:
                     
@@ -289,8 +290,9 @@ class MeasurementRunner(threading.Thread):
         # The ImageCapture
         self.data.add_data(self.data.Keys.CAMERA_SETTINGS, settings, namespace=self.data.Namespaces.CAMERA)
         
-    def mfc_settings_setter(self, massflow):
+    def mfc_settings_setter(self, massflow: float, interrupt: bool):
         
+        self.data.add_data(self.data.Keys.CAMERA_MASSFLOW_INTERRUPT, interrupt, self.data.Namespaces.MEASUREMENT) # this sets a flag for the camera 
         self.data.add_data(self.data.Keys.MFC_SETTINGS, massflow, namespace=self.data.Namespaces.MFC)
         self.mfc.add_task(self.mfc.States.SETTING_SETTER_STATE, 0)    
     

@@ -1,3 +1,4 @@
+from pkgutil import walk_packages
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
@@ -5,10 +6,6 @@ from PySide6.QtCore import *
 from operator_mod.logger.global_logger import Logger
 from controller.device_handler.devices.pump_device.pump import Pump
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
-
-class SetWaiter(QThread):
-    
-    pass
 
 class UIPumpWidget(QWidget):
     
@@ -32,15 +29,8 @@ class UIPumpWidget(QWidget):
         self.fill_level_label = QLabel()
         
         # Adjustable syringe parameters
-        self.syringe_diameter_label = QDoubleSpinBox()
-        self.syringe_diameter_label.setRange(0, 1000)
-        self.syringe_diameter_label.setSingleStep(0.01)
-        self.syringe_diameter_label.editingFinished.connect(self._syringe_params_changed)
-        
-        self.syringe_length_label = QDoubleSpinBox()
-        self.syringe_length_label.setRange(0, 1000)
-        self.syringe_length_label.setSingleStep(0.01)
-        self.syringe_length_label.editingFinished.connect(self._syringe_params_changed)
+        self.syringe_diameter_label = QLabel()
+        self.syringe_length_label = QLabel()
         
         self._update_info_labels()
         
@@ -115,12 +105,48 @@ class UIPumpWidget(QWidget):
         self.unload_layout.addLayout(self.unload_info_layoutwrapper)
         self.unload_widget.setLayout(self.unload_layout)
         
+        ### Syringe setter layout
+        self.syringe_widget = QWidget()
+        self.syringe_layout = QGridLayout()
+        
+        # Label, Spinbox, Unit
+        diameter_label = QLabel("Diameter")
+        length_label = QLabel("Length")
+        
+        self.syringe_diameter_spinbox = QDoubleSpinBox()
+        self.syringe_diameter_spinbox.setSingleStep(0.01)
+        self.syringe_diameter_spinbox.setRange(0, 25)
+        self.syringe_diameter_spinbox.editingFinished.connect(self._syringe_params_changed)
+        
+        self.syringe_length_spinbox = QSpinBox()
+        self.syringe_length_spinbox.setSingleStep(1)
+        self.syringe_length_spinbox.setRange(50, 60)
+        self.syringe_length_spinbox.editingFinished.connect(self._syringe_params_changed)
+        
+        mm_diameter_unit_label = QLabel("mm")
+        mm_length_unit_label = QLabel("mm")
+        
+        self.syringe_layout.addWidget(diameter_label, 0, 0)
+        self.syringe_layout.addWidget(self.syringe_diameter_spinbox, 0, 1)
+        self.syringe_layout.addWidget(mm_diameter_unit_label, 0, 2)
+        
+        self.syringe_layout.addWidget(length_label, 1, 0)
+        self.syringe_layout.addWidget(self.syringe_length_spinbox, 1, 1)
+        self.syringe_layout.addWidget(mm_length_unit_label, 1, 2)
+        
+        self.syringe_widget.setLayout(self.syringe_layout)
+        
         ### Main setter
         self.maintabwidget.addTab(self.load_widget, "Aspirate Fluid")
         self.maintabwidget.addTab(self.unload_widget, "Dispense Fluid")
+        self.maintabwidget.addTab(self.syringe_widget, "Syringe Parameters")
         self.mainlayout.addWidget(self.maintabwidget)
         
         self.setLayout(self.mainlayout)
+    
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._update_info_labels)
+        self.timer.start(500)
     
     def load_button_action(self):
         
@@ -142,30 +168,22 @@ class UIPumpWidget(QWidget):
         
         fill = self.pump.fill_level
         diameter, stroke = self.pump.syringe_params
-        
-        # Blocking signals for updating the label
-        self.syringe_diameter_label.blockSignals(True)
-        self.syringe_length_label.blockSignals(True)
-        
-        self.fill_level_label.setText(str(fill))
-        self.syringe_diameter_label.setValue(float(diameter))
-        self.syringe_length_label.setValue(float(stroke))
-        
-        self.syringe_diameter_label.blockSignals(False)
-        self.syringe_length_label.blockSignals(False)
-        
+
+        # shorten the floats
+        self.fill_level_label.setText(f"{fill:.2f}")
+        self.syringe_diameter_label.setText(f"{diameter:.2f}")
+        self.syringe_length_label.setText(f"{stroke:.2f}")
+
     def _syringe_params_changed(self):
         
-        diameter = self.syringe_diameter_label.value()
-        length = self.syringe_length_label.value()
+        diameter = self.syringe_diameter_spinbox.value()
+        length = self.syringe_length_spinbox.value()
         
         self.data.add_data(self.data.Keys.SYRINGE_DIAMETER, diameter, self.data.Namespaces.PUMP)
         self.data.add_data(self.data.Keys.SYRINGE_LENGTH, length, self.data.Namespaces.PUMP)
         
         self.pump.add_task(self.pump.States.SYRINGE_SETTER, 0)
-        
-        self._update_info_labels()
-        
+                
     def closeEvent(self, event: QCloseEvent):
         
         try:

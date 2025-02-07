@@ -70,14 +70,12 @@ class InMemoryData:
         data_store.purge_all_data(namespace="controller")
     """
     
-    # These are automatically generated
     class Keys(Enum):
         # Devices
         ARDUINO = "Arduino"
         CAMERA = "Camera"
         PUMP = "Pump"
         MFC = "MFC"
-        FIRESTING = "Firesting"
                 
         CONNECTED_DEVICES = "ConnectedDevices"
         
@@ -112,6 +110,7 @@ class InMemoryData:
         
         LIGHTMODE = "ArduinoLightmode"
         CAMERA_LIGHTSWITCHING = "CameraLightmode"
+        CAMERA_MASSFLOW_INTERRUPT = "CameraMassflowInterrupt"
         
         # MIXING TIME
         CURRENT_MIXINGTIME_FOLDER = "CurrentMixingTimeFolder"
@@ -348,57 +347,3 @@ class InMemoryData:
     def list_namespaces(self):
         with self._lock:
             return list(self.namespaces.keys())
-
-    ### THIS IS A TEST ###
-    
-    def generate_enums_file(self, file_name='generated_enums.py'):
-        """
-        Generates a Python file with Enum classes for Keys, Namespaces, and Tags.
-        The file is created in the current directory with the specified name.
-        
-        Args:
-            file_name (str): The name of the file to generate (default is 'generated_enums.py').
-        """
-        # Collect Keys, Namespaces, and Tags
-        keys = set()  # to store all unique keys across namespaces
-        namespaces = set(self.namespaces.keys())  # namespaces
-        tags = set(self.tags.keys())  # tags
-        
-        # Iterate over all namespaces and collect keys
-        for namespace_data in self.namespaces.values():
-            keys.update(namespace_data["key_to_uid"].keys())
-        
-        # Create the content of the enums
-        enum_content = []
-
-        # Write Enums for Keys
-        enum_content.append("from enum import Enum\n\n\n")
-        enum_content.append("class Keys(Enum):\n")
-        for key in sorted(keys):
-            enum_content.append(f"    {key.upper()} = \"{key}\"\n")
-        if not keys:
-            enum_content.append("    pass\n")  # In case there are no keys
-
-        enum_content.append("\n\n")
-
-        # Write Enums for Namespaces
-        enum_content.append("class Namespaces(Enum):\n")
-        for namespace in sorted(namespaces):
-            enum_content.append(f"    {namespace.upper()} = \"{namespace}\"\n")
-        if not namespaces:
-            enum_content.append("    pass\n")  # In case there are no namespaces
-
-        enum_content.append("\n\n")
-
-        # Write Enums for Tags
-        enum_content.append("class Tags(Enum):\n")
-        for tag in sorted(tags):
-            enum_content.append(f"    {tag.upper()} = \"{tag}\"\n")
-        if not tags:
-            enum_content.append("    pass\n")  # In case there are no tags
-
-        # Generate the file
-        with open(file_name, 'w') as f:
-            f.writelines(enum_content)
-
-        print(f"Enum file '{file_name}' generated successfully.")

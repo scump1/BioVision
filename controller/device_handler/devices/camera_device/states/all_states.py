@@ -8,6 +8,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from controller.device_handler.devices.arduino_device.arduino import Arduino
 from controller.device_handler.devices.camera_device.states.abc_state_baseclass import State
+from controller.device_handler.devices.mfc_device.mfc import MFC
 
 class MTEmptyCalibrationState(State):
     
@@ -217,10 +218,14 @@ class ImageCaptureState(State):
             
             # Safety check for the interval light siwtching -> only possible when more than 5 seconds intervals
             self.lightmode = False
+            self.mfc_interrupt = False
             if interval >= 5:
                 self.arduino = Arduino.get_instance()
                 self.lightmode = self.data.get_data(self.data.Keys.CAMERA_LIGHTSWITCHING, self.data.Namespaces.MEASUREMENT)
-        
+            
+                self.mfc = MFC.get_instance()
+                self.mfc_interrupt = self.data.get_data(self.data.Keys.CAMERA_MASSFLOW_INTERRUPT, self.data.Namespaces.MEASUREMENT)
+                
             # Synchronization
             self.device.await_capture_start_event.wait()
 
@@ -259,8 +264,11 @@ class ImageCaptureState(State):
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, True, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
-
-                time.sleep(3)
+                time.sleep(1)
+            
+            if self.mfc_interrupt:
+                self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
+                time.sleep(1)
             
             img_count = 0
             formatted_time = datetime.datetime.now().strftime("%H_%M_%S")
@@ -290,6 +298,10 @@ class ImageCaptureState(State):
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, False, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
+            
+            if self.mfc_interrupt:
+                # this automatically resets the latest airflow
+                self.mfc.add_task(self.mfc.States.OPEN_VALVE, 0)
             
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")

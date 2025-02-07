@@ -39,6 +39,7 @@ class RoutineData:
     @dataclass
     class MaFlCo:
         massflow: float
+        interrupt: bool = False
 
     @dataclass
     class Pump:

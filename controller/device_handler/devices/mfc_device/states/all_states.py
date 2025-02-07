@@ -1,5 +1,4 @@
 
-import math
 import time
 from controller.device_handler.devices.mfc_device.states.abc_state_baseclass import State
             
@@ -42,7 +41,6 @@ class SettingsSetter(State):
         try:
             massflow = self.data.get_data(self.data.Keys.MFC_SETTINGS, namespace=self.data.Namespaces.MFC)
             
-            print(f"MASSFLOW: {massflow}")
             if not massflow:
                 self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, False, self.data.Namespaces.MFC)
                 return
@@ -52,7 +50,6 @@ class SettingsSetter(State):
 
             time.sleep(0.5)
             read = self.device.mfc_instrument.readParameter(205)
-            print(f"READ MASSFLOW: {read}")
             if abs(read - massflow) < 2.5:
                 self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, True, self.data.Namespaces.MFC)
             else:
@@ -96,32 +93,31 @@ class ReadMassFlowState(State):
         except Exception as e:
             self.logger.error(f"Could not read values: {e}.")
 
-class AirflowValveSwitch(State):
+class CloseValve(State):
     
     def run_logic(self):
         
-        self.switch_valve()
+        try:
+            read = self.device.mfc_instrument.readParameter(205) # to restore it later
+
+            if read is not None:
+                self.data.add_data(self.data.Keys.MFC_MASSFLOW, read, self.data.Namespaces.MFC)
+
+        except Exception as e:
+            self.logger.warning(f"Could not close valve: {e}.")
         
-    def switch_valve(self):
+class OpenValve(State):
+    
+    def run_logic(self):
         
         try:
-            read = self.device.mfc_instrument.readParameter(205)
-
-            # this means that we have an "open" valve
-            if read is not None and read > 0.0:
-                self.logger.info("Shutting down airflow shortly.")
-                self.device.mfc_instrument.writeParameter(206, 0.0)
+            # Trying to get the latest read
+            read = self.data.get_data(self.data.Keys.MFC_MASSFLOW, self.data.Namespaces.MFC)
             
-            # This means valve is closed
-            elif math.isclose(read, 0.0, abs_tol=1e-5):
-                self.logger.info("Reopening airflow.")
-                # Trying to retriveve the last massflow setting
-                massflow = self.data.get_data(self.data.Keys.MFC_SETTINGS, namespace=self.data.Namespaces.MFC)
-                
-                if massflow is not None:
-                    self.device.mfc_instrument.writeParameter(206, massflow)
-                else:
-                    self.device.mfc_instrument.writeParameter(206, 5.0)
+            if read is not None:
+                self.device.mfc_instrument.writeParameter(206, read)
+            else:
+                self.device.mfc_instrument.writeParameter(206, 5.0)
         
         except Exception as e:
-            self.logger.warning(f"Could not switch valve: {e}.")
+            self.logger.warning(f"Could not open valve with latest read: {read}, {e}.")
