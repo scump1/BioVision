@@ -41,8 +41,9 @@ class SyringeSetter(State):
         syringe_diameter = self.data.get_data(self.data.Keys.SYRINGE_DIAMETER, self.data.Namespaces.PUMP)
         syringe_length = self.data.get_data(self.data.Keys.SYRINGE_LENGTH, self.data.Namespaces.PUMP)
         
+        print(syringe_diameter, syringe_length)
         if type(syringe_diameter) == float and type(syringe_length) == float:
-        
+            
             self.device._syringeconfig(syringe_diameter, syringe_length)
             
         else:
@@ -67,7 +68,7 @@ class UnloadFluidState(State):
             flow = self.device.max_flowrate
         
         self.device.unload_fluid(volume, flow)
-        
+
 class MTUnloadFluidState(State):
     
     def run_logic(self):

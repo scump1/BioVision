@@ -125,7 +125,7 @@ class Pump(Device):
         if volume >= self.max_volume:
             volume = self.max_volume
         
-        elif volume >= (self.max_volume - float(self._fill_level)):
+        if volume >= (self.max_volume - float(self._fill_level)):
             volume = (self.max_volume - float(self._fill_level))
         
         self.pump.aspirate(volume, self.max_flowrate)
@@ -144,6 +144,14 @@ class Pump(Device):
         self.pump.dispense(float(volume), float(flowrate))    
         self._wait_dipsense_fluid(volume, flowrate)
     
+    def stop_pump(self):
+        
+        try:
+            self.pump.stop_pumping()
+            
+        except Exception as e:
+            self.logger.error(f"Could not stop pump: {e}.")
+    
     ### Internal setup via SDK    
     def _set_units(self):
         """
@@ -157,20 +165,24 @@ class Pump(Device):
         max_ul_s = self.pump.get_flow_rate_max()
         self.logger.info(f"Max. flow ul/s: {max_ul_s}.")
     
-    def _syringeconfig(self, init_diameter : float = 1.456, initi_length : float = 60.0):
+    def _syringeconfig(self, init_diameter : float = None, init_length : float = None):
         """
         Sets the intended syringe configuration to the pump.
         """
-        inner_diameter_set = init_diameter
-        piston_stroke_set = initi_length
-        self.pump.set_syringe_param(inner_diameter_set, piston_stroke_set)
+        
+        if init_diameter is not None and init_length is not None:
+            inner_diameter_set = init_diameter
+            piston_stroke_set = init_length
+            self.pump.set_syringe_param(inner_diameter_set, piston_stroke_set)
+            
         diameter, stroke = self.pump.get_syringe_param()
         
-        if diameter == inner_diameter_set and stroke == piston_stroke_set:
-            self._syringe_params = [diameter, stroke]
-            self.logger.info("Setup of syringe successful.")
-        else:
-            return
+        self._syringe_params = [diameter, stroke]
+        
+        self.max_volume = self.pump.get_volume_max()
+        self.max_flowrate = self.pump.get_flow_rate_max()
+        
+        self.logger.info("Setup of syringe successful.")
   
     ### Internal waiting and checkups
     def _wait_calibration_finished(self, timeout : int = 30):

@@ -1,4 +1,4 @@
-from pkgutil import walk_packages
+
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
@@ -63,8 +63,12 @@ class UIPumpWidget(QWidget):
         self.load_button = QPushButton("Aspirate")
         self.load_button.clicked.connect(self.load_button_action)
         
+        self.stop_load_button = QPushButton("Stop")
+        self.stop_load_button.clicked.connect(self._stop_pump)
+        
         self.load_layout.addLayout(self.volume_layout)
         self.load_layout.addWidget(self.load_button)
+        self.load_layout.addWidget(self.stop_load_button)
         
         self.load_widget.setLayout(self.load_layout)
         
@@ -100,7 +104,11 @@ class UIPumpWidget(QWidget):
         self.unload_button = QPushButton("Dispense")
         self.unload_button.clicked.connect(self.unload_button_action)
         
+        self.stop_unload_button = QPushButton("Stop")
+        self.stop_unload_button.clicked.connect(self._stop_pump)
+        
         self.unload_info_layoutwrapper.addWidget(self.unload_button)
+        self.unload_info_layoutwrapper.addWidget(self.stop_unload_button)
         
         self.unload_layout.addLayout(self.unload_info_layoutwrapper)
         self.unload_widget.setLayout(self.unload_layout)
@@ -122,6 +130,8 @@ class UIPumpWidget(QWidget):
         self.syringe_length_spinbox.setSingleStep(1)
         self.syringe_length_spinbox.setRange(50, 60)
         self.syringe_length_spinbox.editingFinished.connect(self._syringe_params_changed)
+        
+        self._set_inital_syringe_params()
         
         mm_diameter_unit_label = QLabel("mm")
         mm_length_unit_label = QLabel("mm")
@@ -147,6 +157,8 @@ class UIPumpWidget(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self._update_info_labels)
         self.timer.start(500)
+        
+        self.resize(self.sizeHint())
     
     def load_button_action(self):
         
@@ -176,14 +188,38 @@ class UIPumpWidget(QWidget):
 
     def _syringe_params_changed(self):
         
-        diameter = self.syringe_diameter_spinbox.value()
-        length = self.syringe_length_spinbox.value()
+        diameter = float(self.syringe_diameter_spinbox.value())
+        length = float(self.syringe_length_spinbox.value())
         
         self.data.add_data(self.data.Keys.SYRINGE_DIAMETER, diameter, self.data.Namespaces.PUMP)
         self.data.add_data(self.data.Keys.SYRINGE_LENGTH, length, self.data.Namespaces.PUMP)
         
         self.pump.add_task(self.pump.States.SYRINGE_SETTER, 0)
-                
+    
+    def _set_inital_syringe_params(self):
+        
+        diameter = self.syringe_diameter_label.text()
+        length = self.syringe_length_label.text()
+        
+        self.syringe_diameter_spinbox.setValue(float(diameter))
+        self.syringe_length_spinbox.setValue(float(length))
+    
+    def _stop_pump(self):
+        
+        self.pump.stop_pump()
+        
+        self._button_enabler(False)
+
+        timer = QTimer()
+        timer.singleShot(10000, lambda: self._button_enabler(True))
+        timer.start()
+            
+    def _button_enabler(self, state: bool):
+        
+        if state is not None:
+            self.load_button.setEnabled(state)
+            self.unload_button.setEnabled(state)
+    
     def closeEvent(self, event: QCloseEvent):
         
         try:

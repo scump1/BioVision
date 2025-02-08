@@ -57,7 +57,7 @@ class MFC(Device):
         try:
             
             if self.mfc_instrument is None:
-                self.mfc_instrument = propar.instrument('COM4')
+                self.mfc_instrument = propar.instrument('COM3')
  
             read = self.mfc_instrument.readParameter(205)
 
