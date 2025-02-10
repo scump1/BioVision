@@ -17,6 +17,7 @@ class Camera(Device):
     _instance = None
     _lock = threading.Lock()
     
+    # Exposing the enums to the outside
     class States(Enum):
         HEALTH_CHECK_STATE = 1
         IMAGE_CAPTURE_STATE = 2
@@ -38,6 +39,17 @@ class Camera(Device):
         States.MT_IMAGE_CAPTURE_STATE: MTImagecaptureState
         # Add more states here
     }
+    
+    # Exposing the Enum to the outside
+    class AreaOfInterest(Enum):
+        
+        COLUMN = 1
+        COLUMN_WITH_TOP = 2
+        
+    area_of_interests = {
+        AreaOfInterest.COLUMN: [600, 2500, 1700, 2175],
+        AreaOfInterest.COLUMN_WITH_TOP: [600, 3000, 1700, 2175]
+    }
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -52,6 +64,9 @@ class Camera(Device):
         self.logger = Logger("Camera").logger
         self.data = InMemoryData()
         self.configurations = ConfigurationManager.get_instance()
+        
+        # Standard Value
+        self.data.add_data(self.data.Keys.AREA_OF_INTERST, self.AreaOfInterest.COLUMN, self.data.Namespaces.CAMERA)
         
         # The camera device
         self.cam = None

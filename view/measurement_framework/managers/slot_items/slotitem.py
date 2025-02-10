@@ -1,3 +1,4 @@
+import string
 
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
@@ -123,16 +124,13 @@ class SlotItemWidget(QWidget):
         self.condition_picker.setEnabled(state)
         self.compare_type.setEnabled(state)
         self.condition_value.setEnabled(state)
-    
-    def _subroutine_setter(self) -> QWidget:
-        
-        # TBD
-        pass
                     
     def update_slot_property(self):
         
         # Name
-        self.slot.name = self.name_edit.text()
+        name = self.name_edit.text()
+        name = self.sanitize_project_name(name)
+        self.slot.name = name
         
         # Runtime      
         if 's' == self.runtime_unit.currentText():
@@ -159,3 +157,22 @@ class SlotItemWidget(QWidget):
             
             condition = RoutineData.ParameterCondition(parameter=param[self.condition_picker.currentText()], condition_type=cond_type[self.compare_type.currentText()], target_value=self.condition_value.value())
             self.slot.condition = condition 
+            
+    def sanitize_project_name(self, name: str) -> str:
+        """Removes all invalid chars from a name for file/dir creation.
+
+        Args:
+            name (str): Any string name.
+
+        Returns:
+            str: the sanitized name
+        """
+        # Define invalid characters: control characters, punctuation, and whitespace
+        invalid_chars = set(chr(i) for i in range(0x00, 0x20))  # Control characters
+        invalid_chars.update(string.punctuation)  # All punctuation characters
+        invalid_chars.add(' ')  # Add whitespace explicitly
+        
+        # Replace each invalid character with an underscore
+        sanitized_name = ''.join(char if char not in invalid_chars else '_' for char in name)
+        
+        return sanitized_name

@@ -82,9 +82,12 @@ class SensorPolling(State):
             time.sleep(0.5)
             
             ard_data = []
-            while self.device.serial_con.in_waiting > 0 and not self.terminated:
-                read = self.device.serial_con.readline().decode().strip()
-                ard_data.append(read)
+            i = 3
+            while i > 0 and not self.terminated:
+                if self.device.serial_con.in_waiting > 0:
+                    read = self.device.serial_con.readline().decode().strip()
+                    ard_data.append(read)
+                    i -= 1
 
             # Data adding logic
             if ard_data:

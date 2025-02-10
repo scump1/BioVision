@@ -259,20 +259,40 @@ class ImageCaptureState(State):
         self.device.cam.stream_off()
 
     def single_img_capture(self, img_per_int: int):
+        """
+        Captures a series of images. A variety of flags can be set for this function internally. 
         
+        data.Keys.CAMERA_LIGHTSWITCHING -> For swapping light back on and off
+        data.Keys.CAMERA_MASSFLOW_INTERRUPT -> Turn off massflow while image capture
+        data.Keys.IMAGE_CAPTURE_AREA -> Enumerator for image cap area
+        
+        Args:
+            img_per_int (int): How manz images in a series per capture interval
+            
+        Return:
+            None
+        """
         try:
+            knockout_time = 0
+            
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, True, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
-                time.sleep(1)
-            
+                knockout_time += 1
+                    
             if self.mfc_interrupt:
                 self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
-                time.sleep(1)
-            
+                knockout_time += 5
+
+            time.sleep(knockout_time)
+
             img_count = 0
             formatted_time = datetime.datetime.now().strftime("%H_%M_%S")
-            self.logger.info("Trying to capture Image")
+
+            # Grabbing the area of iterest
+            area_enum = self.data.get_data(self.data.Keys.AREA_OF_INTERST, self.data.Namespaces.CAMERA)
+            
+            x1, x2, y1, y2 = self.device.area_of_interests.get(area_enum, None)
 
             while img_per_int > 0:
                 raw_img = self.device.cam.data_stream[0].get_image()
@@ -280,7 +300,7 @@ class ImageCaptureState(State):
                 if raw_img is not None:
                     rgb_image = raw_img.convert("RGB")
                     numpy_image = rgb_image.get_numpy_array()
-                    numpy_image = numpy_image[600:2500, 1800:2175]
+                    numpy_image = numpy_image[x1:x2, y1:y2]
                     
                     filename = f"Image_{formatted_time}_{img_count}.bmp"
                     filepath = os.path.join(self.path, filename)

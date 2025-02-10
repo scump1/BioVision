@@ -70,10 +70,11 @@ class UIMFCWidget(QWidget):
         self.massflow = None
         
         self.polltimer = QTimer()
-        self.polltimer.setInterval(5000)
+        self.polltimer.setInterval(1000)
         self.polltimer.timeout.connect(self.poll_current_massflow)
 
     def setupWidget(self):
+        
         self.setWindowTitle("MFC Settings")
         self.setContentsMargins(5,5,5,5)
         

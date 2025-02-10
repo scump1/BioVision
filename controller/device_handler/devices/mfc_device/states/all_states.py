@@ -103,6 +103,9 @@ class CloseValve(State):
             if read is not None:
                 self.data.add_data(self.data.Keys.MFC_MASSFLOW, read, self.data.Namespaces.MFC)
 
+            ## Actually closing
+            self.device.mfc_instrument.writeParameter(206, 0.0)
+
         except Exception as e:
             self.logger.warning(f"Could not close valve: {e}.")
         

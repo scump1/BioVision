@@ -79,6 +79,9 @@ class InMemoryData:
                 
         CONNECTED_DEVICES = "ConnectedDevices"
         
+        # CAMERA
+        AREA_OF_INTERST = "AreaOfInterest"
+        
         # PUMP
         PUMP_UNLOAD_VOLUME = "PumpUnloadVolume"
         PUMP_LOAD_VOLUME = "PumpVolume"

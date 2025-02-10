@@ -60,20 +60,12 @@ class State(ABC):
                 
         if expected_response is not None:
             
-            if type(expected_response) == float:
-                # we need to check for floating point errors and stuff
-                if abs(expected_response - float(response)) < 1e-5:
-                    return True
-                else:
-                    self.logger.warning(f"Discrepancy between response: {response} and expected response: {expected_response}.")
-                    return False
-            
-            elif response == expected_response:
+            expected_type = type(expected_response)
+            response = expected_type(response)
+        
+            if expected_response == response:
                 return True
-            
-            else:
-                self.logger.warning(f"Discrepancy between response: {response} and expected response: {expected_response}.")
-                return False
+            return False
         
         elif response == "Y":
             return True
