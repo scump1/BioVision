@@ -65,13 +65,12 @@ class SensorPolling(State):
             self.sched.start()
 
         while datetime.datetime.now() < self.runtime_target and not self.terminated:
-            self.logger.info("Arduino Working")
             time.sleep(1)
 
         # This is the final code
         self.sched.pause()
         self.sched.remove_all_jobs()
-        self.sched.shutdown()
+        self.sched.shutdown(wait=False)
 
         del self.sched
 

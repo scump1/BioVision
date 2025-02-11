@@ -219,6 +219,7 @@ class ImageCaptureState(State):
             # Safety check for the interval light siwtching -> only possible when more than 5 seconds intervals
             self.lightmode = False
             self.mfc_interrupt = False
+            
             if interval >= 5:
                 self.arduino = Arduino.get_instance()
                 self.lightmode = self.data.get_data(self.data.Keys.CAMERA_LIGHTSWITCHING, self.data.Namespaces.MEASUREMENT)
@@ -244,19 +245,14 @@ class ImageCaptureState(State):
             self.terminate_img_cap()
 
     def start_img_cap(self, img_per_int, interval):
-        
-        # First we open up the cam stream
-        self.device.cam.stream_on()
-        
+
         self.scheduler.add_job(self.single_img_capture, 'interval', args=[img_per_int], seconds=interval)
         self.scheduler.start()
 
     def terminate_img_cap(self):
         
         if self.scheduler:
-            self.scheduler.shutdown()
-            
-        self.device.cam.stream_off()
+            self.scheduler.shutdown(wait=False)
 
     def single_img_capture(self, img_per_int: int):
         """
@@ -273,18 +269,17 @@ class ImageCaptureState(State):
             None
         """
         try:
-            knockout_time = 0
-            
+          
+            if self.mfc_interrupt:
+                self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
+
+            time.sleep(6)
+
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, True, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
-                knockout_time += 1
-                    
-            if self.mfc_interrupt:
-                self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
-                knockout_time += 5
-
-            time.sleep(knockout_time)
+            
+            time.sleep(2)
 
             img_count = 0
             formatted_time = datetime.datetime.now().strftime("%H_%M_%S")
@@ -293,7 +288,10 @@ class ImageCaptureState(State):
             area_enum = self.data.get_data(self.data.Keys.AREA_OF_INTERST, self.data.Namespaces.CAMERA)
             
             x1, x2, y1, y2 = self.device.area_of_interests.get(area_enum, None)
-
+          
+            # First we open up the cam stream
+            self.device.cam.stream_on()
+        
             while img_per_int > 0:
                 raw_img = self.device.cam.data_stream[0].get_image()
                 
@@ -314,7 +312,7 @@ class ImageCaptureState(State):
                     
                 img_count += 1
                 img_per_int -= 1
-            
+
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, False, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
@@ -325,6 +323,9 @@ class ImageCaptureState(State):
             
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")
+            
+        finally:
+            self.device.cam.stream_off()
                 
 class HealthCheckState(State):
     

@@ -160,7 +160,7 @@ void poll_temp() {
 
 void adjust_servo_state() {
   if (angle == 1) {
-    light_servo.write(180);
+    light_servo.write(90);
   }
   else if (angle == 0) {
     light_servo.write(0);
