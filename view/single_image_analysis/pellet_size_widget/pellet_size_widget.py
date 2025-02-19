@@ -7,6 +7,7 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 import time
 import cv2
+import numpy as np
 
 from view.single_image_analysis.graphics_view_widget import ImageDisplay
 
@@ -23,9 +24,15 @@ class ResultWaiter(QThread):
     """
     progress = Signal(float)
     
-    def __init__(self, img_number: int) -> None:
+    def __init__(self, img_number: int, interval: int) -> None:
+        """
+        Args: 
+            img_number (int): the amount of images that is givem
+            interval (int): a msec time interval to wait per image
+        """
         super().__init__()
         self.img_num = img_number
+        self.interval = interval
 
     def run(self):
         """Executed on start.
@@ -34,7 +41,7 @@ class ResultWaiter(QThread):
         
         timer.start()
         now = 0
-        end = self.img_num * 1000
+        end = self.img_num * self.interval
         while timer.elapsed() < end:
             
             # Every second we emit the signal to increment the progressbar
@@ -140,17 +147,26 @@ class PelletSizeWidghet(QTabWidget):
                 self.removeTab(self.count() - 1)
         
         filepaths = []
+        filesizes = []
         for i in range(self.imageview.count()):
             
             widget = self.imageview.widget(i)
-            filepaths.append(widget.path)
+            path = widget.path
+            
+            if os.path.exists(path):
+                filepaths.append(path)
+                size = os.path.getsize(path)
+                filesizes.append(size)
         
         self.data.add_data(self.data.Keys.PELLET_SIZER_IMAGES, filepaths, self.data.Namespaces.DEFAULT)
         self.algman.add_task(self.algman.States.PELLET_SIZER_SINGLE_STATE, 0)
         
         imgnum = self.imageview.count()
+        avg_filesize = np.average(filesizes)
         
-        self.waiter = ResultWaiter(imgnum)
+        waitertime = max(1, min(5, np.sqrt(avg_filesize))) * 1000
+        
+        self.waiter = ResultWaiter(imgnum, waitertime)
         self.waiter.finished.connect(self.display_results)
         self.waiter.progress.connect(self._progressbar_update)
         self.waiter.start()
