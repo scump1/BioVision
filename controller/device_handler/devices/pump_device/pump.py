@@ -55,10 +55,14 @@ class Pump(Device):
 
         self.await_mt_injection_event = threading.Event()
 
-        self._connect()
-        self._start_pump()
-        
-        self._fill_level = self.pump.get_fill_level() # retrieveing after Bus init
+        try:
+            self._connect()
+            self._start_pump()
+            
+            self._fill_level = self.pump.get_fill_level() # retrieveing after Bus init
+        except Exception as e:
+            self.logger.error(f"Could not connect to pump: {e}.")
+            self.data.add_data(self.data.Keys.PUMP, False, self.data.Namespaces.DEVICES)
         
     def _connect(self):
         """

@@ -25,7 +25,7 @@ class PelletSizerSingleState(State):
                 }
             
                 for future in futures:
-                    result = future.result(timeout=5)
+                    result = future.result()
 
                     if results is not None:
                         results.append(result)

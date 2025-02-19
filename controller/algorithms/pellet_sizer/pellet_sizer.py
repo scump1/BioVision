@@ -5,7 +5,7 @@ from controller.algorithms.pellet_sizer.steps.postprocessing import PostProcessi
 from controller.algorithms.pellet_sizer.steps.preprocessing import Preprocessor
 from controller.algorithms.pellet_sizer.steps.processing import Processor
 
-class PelletSizer():
+class PelletSizer:
     
     def __init__(self) -> None:
         pass
