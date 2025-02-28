@@ -151,6 +151,7 @@ class InMemoryData:
         SI_RESULT = "SiResult"
         
         PELLET_SIZER_IMAGES = "PelletSizerImages"
+        PELLET_SIZER_IMAGE_SETTINGS = "PelletSizerImageSettings"
         PELLET_SIZER_RESULT = "PelletSizerResult"
         
     class Namespaces(Enum):

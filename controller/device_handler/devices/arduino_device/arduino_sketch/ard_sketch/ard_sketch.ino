@@ -49,44 +49,36 @@ void loop() {
 }
 
 void pollSerial() {
-
   if (Serial.available() > 0) {
-    char command = (char)Serial.read();
-    delay(50);
+    char command = Serial.read();  // Read the command character
 
     switch (command) {
-
-      case 'H':
+      case 'H':  // Health Check
         Serial.println("Y");
         break;
 
-      case 'T':
-      
-        if (Serial.available() > 0) {
-          delay(100);
-          target_temperature = Serial.parseFloat();
-          Serial.println(target_temperature);
-        }
+      case 'T':  // Temperature Set Command
+        while (!Serial.available());  // Wait until a float value is available
+        target_temperature = Serial.parseFloat();
+        Serial.println(target_temperature);
         break;
 
-      case 'R':
+      case 'R':  // Sensor Polling Response
         Serial.println(current_temperature);
         Serial.println(target_temperature);
         Serial.println(fanspeed);
         break;
 
-      case 'S':
-      
-        if (Serial.available() > 0) {
-          delay(100);
-          angle = Serial.parseFloat();
-          Serial.println(angle);
-          adjust_servo_state();
+      case 'S':  // Light Switch Command
+        while (!Serial.available());  // Wait until a float value is available
+        angle = Serial.parseFloat();
+        Serial.println(angle);
+        adjust_servo_state();
         break;
-        }
     }
   }
 }
+
 
 // This calculates a fan speed via a plotted function -> under target means higher rpm, at target means base speed, above target is approaching zero speed
 void calculateFanSpeed() {
@@ -160,9 +152,9 @@ void poll_temp() {
 
 void adjust_servo_state() {
   if (angle == 1) {
-    light_servo.write(90);
-  }
-  else if (angle == 0) {
+  light_servo.write(90);
+  } else {
     light_servo.write(0);
   }
+
 }

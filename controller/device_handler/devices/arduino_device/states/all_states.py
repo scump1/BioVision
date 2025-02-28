@@ -33,18 +33,16 @@ class SettingsSetterState(State):
         if self.device.serial_con:
             try:
                 # Send the temperature command
-                self.device.serial_con.write("T\n".encode())
-                self.device.serial_con.write(f"{temperature}\n".encode())
+                self.device.send_command("T")
+                response = self.device.send_command(str(temperature))
+                
                 self.logger.info(f"Sent command: T with temperature {temperature}.")
 
-                if self._wait_for_response(expected_response=temperature):
+                if response == str(temperature):
                     self.logger.info("Temperature setting set.")
                 else:
-                    self.logger.warning(f"Failed to set temperature setting. Expected response: {temperature}.")
+                    self.logger.warning(f"Unexpected response: {response}.")
 
-            except serial.SerialException as e:
-                self.logger.error(f"Serial error: {e}")
-                self.data.add_data(self.data.Keys.ARDUINO, False, namespace=self.data.Namespaces.DEVICES)
             except Exception as e:
                 self.logger.error(f"Unexpected error: {e}")
                 self.data.add_data(self.data.Keys.ARDUINO, False, namespace=self.data.Namespaces.DEVICES)
@@ -77,22 +75,12 @@ class SensorPolling(State):
     def _polling(self):
         
         try:
-            self.device.serial_con.write('R\n'.encode())  # Request data from Arduino
-            time.sleep(0.5)
+            response = self.device.send_command("R") # Request data from Arduino
             
-            ard_data = []
-            i = 3
-            while i > 0 and not self.terminated:
-                if self.device.serial_con.in_waiting > 0:
-                    read = self.device.serial_con.readline().decode().strip()
-                    ard_data.append(read)
-                    i -= 1
-
-            # Data adding logic
-            if ard_data:
-                self.data_writer.arduino_data_writer(ard_data)
+            if response:
+                self.data_writer.arduino_data_writer(response)
                 if self.live_recording:
-                    self.data.add_data(self.data.Keys.LIVE_TEMPERATURE, ard_data[0], self.data.Namespaces.MEASUREMENT)
+                    self.data.add_data(self.data.Keys.LIVE_TEMPERATURE, response, self.data.Namespaces.MEASUREMENT)
                 
         except Exception as e:
             self.logger.error(f"Arduino - Error in polling sensors: {e}")

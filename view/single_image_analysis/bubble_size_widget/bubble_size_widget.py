@@ -208,7 +208,10 @@ class BubbleSizeWidget(QTabWidget):
         
         self.addTab(imgwidget, "Result Image")
         self.addTab(tablewidget, "Result Data")
-
+        
+        ### Deleting the result for memeroy management
+        self.data.delete_data(self.data.Keys.SI_RESULT, self.data.Namespaces.DEFAULT)
+        
     def _progressbar_update(self, value: float):
         """Progresses the progress bar with a given value.
 

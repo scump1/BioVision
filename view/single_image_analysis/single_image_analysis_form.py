@@ -34,7 +34,9 @@ class SingleImageAnylsisForm(QStackedWidget):
         self.uid = uuid.uuid4()
         
     def setupForm(self) -> QWidget:
-                
+        
+        self.setMinimumSize(QSize(1000, 600))
+        
         ### This is the first page aka welcome and algorithm select
         # The main layout that holds the gridlayout
         mainwidget = QWidget()

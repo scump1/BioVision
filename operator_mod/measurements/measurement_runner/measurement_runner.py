@@ -271,7 +271,7 @@ class MeasurementRunner(threading.Thread):
         if setter is False:
             
             if condition.parameter == RoutineData.Parameter.TEMPERATURE:
-                data = self.data.get_data(self.data.Keys.LIVE_TEMPERATURE, namespace=self.data.Namespaces.MEASUREMENT)
+                data = self.data.get_data(self.data.Keys.LIVE_TEMPERATURE, namespace=self.data.Namespaces.MEASUREMENT)[0]
     
                 result = condition.evaluate(data)
                 

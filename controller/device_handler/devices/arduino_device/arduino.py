@@ -1,4 +1,5 @@
 
+import queue
 import threading
 import time
 import serial
@@ -42,6 +43,13 @@ class Arduino(Device):
         # Threading Events
         self.await_polling_start_event = threading.Event()
         
+        # Serial Management
+        self.serial_command_queue = queue.Queue()
+        self.serial_lock = threading.Lock()
+        self.serial_worker_thread = threading.Thread(target=self._serial_worker)
+        self.serial_worker_thread.daemon = True
+        self.serial_worker_thread.start()
+        
         self.logger = Logger("Arduino").logger
         self.events = EventManager()
         self.data = InMemoryData()
@@ -71,6 +79,52 @@ class Arduino(Device):
             self.serial_con = None
             self.data.add_data(self.data.Keys.ARDUINO, False, namespace=self.data.Namespaces.DEVICES)
             self.logger.warning(f"Error in establishing serial connection: {e}")
+
+    def _serial_worker(self):
+        """Runs the serial communication and collects multi-line responses when necessary."""
+        while True:
+            command, response_event, response_list = self.serial_command_queue.get()
+
+            with self.serial_lock:
+                if self.serial_con:
+                    try:
+                        # Send command
+                        self.serial_con.write(f"{command}\n".encode())
+                        self.logger.info(f"Sent command: {command}")
+
+                        # Handle multi-line response
+                        if command == "R":
+                            expected_lines = 3  # "R" command returns 3 lines
+                        else:
+                            expected_lines = 1  # Other commands return only 1 line
+
+                        for _ in range(expected_lines):
+                            response = self.serial_con.readline().decode().strip()
+                            if response:
+                                response_list.append(response)
+                                self.logger.info(f"Received response: {response}")
+
+                    except serial.SerialException as e:
+                        self.logger.error(f"Serial error: {e}")
+                    except Exception as e:
+                        self.logger.error(f"Unexpected error: {e}")
+
+            # Signal that the response is ready
+            response_event.set()
+
+    def send_command(self, command):
+        """
+        Places a command in the queue and waits for the full response.
+        Returns a list of responses if multiple lines are expected.
+        """
+        response_event = threading.Event()
+        response_list = []
+        
+        self.serial_command_queue.put((command, response_event, response_list))
+        response_event.wait()  # Wait until response is ready
+
+        return response_list if response_list else None
+
 
     @classmethod
     def get_instance(cls):

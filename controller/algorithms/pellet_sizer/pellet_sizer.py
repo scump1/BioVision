@@ -10,7 +10,20 @@ class PelletSizer:
     def __init__(self) -> None:
         pass
     
-    def processing(self, path : str, visualization: bool = False) -> dict:
+    def processing(self, path : str, visualization: bool = False, settings : list = None) -> dict:
+        """Processes a given pellet image to analzye for pellet sizes.
+
+        Args:
+            path (str): file path
+            visualization (bool, optional): if an image should be returned. Defaults to False.
+            settings (list, optional): a list of settings for individualization. Defaults to False.
+
+        Raises:
+            ValueError: If the path object does not exists.
+
+        Returns:
+            dict: "image" : Image if visualization, "Data" : data
+        """
         
         self.path = path
         
@@ -18,7 +31,7 @@ class PelletSizer:
             raise ValueError("Path object does not exist in PelletSizer.") 
         
         # Preprocessing
-        prepro = Preprocessor(self.path)
+        prepro = Preprocessor(self.path, settings)
         img = prepro.process()
         
         # Processing

@@ -13,6 +13,7 @@ class PelletSizerSingleState(State):
         
         ### Get the information
         self.target_paths = self.data.get_data(self.data.Keys.PELLET_SIZER_IMAGES, self.data.Namespaces.DEFAULT)
+        self.target_settings = self.data.get_data(self.data.Keys.PELLET_SIZER_IMAGE_SETTINGS, self.data.Namespaces.DEFAULT)
         
         pelletsizer = PelletSizer()
         
@@ -20,10 +21,11 @@ class PelletSizerSingleState(State):
         with ProcessPoolExecutor() as executor:
             
             try:
-                futures = {
-                    executor.submit(pelletsizer.processing, path, True): path for path in self.target_paths
-                }
-            
+                futures = []
+                for i, path in enumerate(self.target_paths):
+
+                    futures.append(executor.submit(pelletsizer.processing, path, True, self.target_settings[i]))
+                       
                 for future in futures:
                     result = future.result()
 

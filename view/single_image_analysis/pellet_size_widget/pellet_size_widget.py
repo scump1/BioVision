@@ -1,6 +1,7 @@
 
 import csv
 import os
+from tkinter import Image
 from PySide6.QtWidgets import QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QProgressBar, QTableView, QFileDialog, QMessageBox
 from PySide6.QtCore import QThread, Signal, QElapsedTimer
 from PySide6.QtGui import QStandardItemModel, QStandardItem
@@ -9,7 +10,7 @@ import time
 import cv2
 import numpy as np
 
-from view.single_image_analysis.graphics_view_widget import ImageDisplay
+from view.single_image_analysis.graphics_view_widget import ImageDisplaySettings, ImageDisplay
 
 from controller.algorithms.algorithm_manager_class.algorithm_manager import AlgorithmManager
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
@@ -101,6 +102,8 @@ class PelletSizeWidghet(QTabWidget):
         imagelayout.addWidget(self.imageview)
         imagelayout.addWidget(delete_image_button)
         
+        ### Adding a few custom settings
+        
         imagedisplay_layout.addLayout(imagelayout)
         
         # Analyze button and progressbar
@@ -147,6 +150,7 @@ class PelletSizeWidghet(QTabWidget):
                 self.removeTab(self.count() - 1)
         
         filepaths = []
+        filesettings = []
         filesizes = []
         for i in range(self.imageview.count()):
             
@@ -157,8 +161,12 @@ class PelletSizeWidghet(QTabWidget):
                 filepaths.append(path)
                 size = os.path.getsize(path)
                 filesizes.append(size)
+                
+                # If there are no settings, its just an empty list
+                filesettings.append(widget.settings)
         
         self.data.add_data(self.data.Keys.PELLET_SIZER_IMAGES, filepaths, self.data.Namespaces.DEFAULT)
+        self.data.add_data(self.data.Keys.PELLET_SIZER_IMAGE_SETTINGS, filesettings, self.data.Namespaces.DEFAULT)
         self.algman.add_task(self.algman.States.PELLET_SIZER_SINGLE_STATE, 0)
         
         imgnum = self.imageview.count()
@@ -197,6 +205,9 @@ class PelletSizeWidghet(QTabWidget):
         
         self.addTab(resultimage_widget, "Result Images")
         self.addTab(result_table, "Result Values")
+        
+        ### Deleting the references to the images of the result to clean up the internal data
+        self.data.delete_data(self.data.Keys.PELLET_SIZER_RESULT, self.data.Namespaces.DEFAULT)
         
     def _result_image_widget(self, images: list, filepaths: list) -> QWidget:
         """Prepares a Widget with a TabWidget where the images are shown in ImageDisplays. 
@@ -446,7 +457,7 @@ class PelletSizeWidghet(QTabWidget):
             self.logger.info(f"Exported table to {file_path}.")
         except Exception as e:
             self.logger.error(f"Error exporting table to {file_path}: {e}.")
-             
+
     def calib_dialog_button(self) -> None:
         """Fetches a list of files that shall be analyzed.
         """
@@ -460,7 +471,7 @@ class PelletSizeWidghet(QTabWidget):
             if os.path.exists(file_path):
                 
                 # the ImageDisplay holds on to the path so we can later just iterate through all widgets and get the paths for the image analysis
-                widget = ImageDisplay(file_path)
+                widget = ImageDisplaySettings(file_path)
                 widget.setupForm()
                 
                 self.imageview.addTab(widget, str(os.path.basename(file_path)))
