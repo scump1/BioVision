@@ -60,7 +60,10 @@ class UIArduinoWidget(QWidget):
             self.data.add_data(self.data.Keys.LIGHTMODE, not current_state, self.data.Namespaces.MEASUREMENT)
             self.arudino.add_task(self.arudino.States.LIGHT_SWITCH_STATE, 0)
         
-            self.current_light_state.setText("ON") if current_state == True else "OFF"
+            if current_state is True:
+                self.current_light_state.setText("ON")
+            else:
+                self.current_light_state.setText("OFF")
         
         elif current_state == None:
             # Then the light is OFF
