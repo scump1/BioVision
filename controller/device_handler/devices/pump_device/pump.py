@@ -14,7 +14,7 @@ from operator_mod.eventbus.event_handler import EventManager
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from controller.device_handler.devices.state_machine_template import Device
 
-from controller.device_handler.devices.pump_device.states.all_states import HealthCheckState, LoadFluidState, UnloadFluidState, MTUnloadFluidState, SyringeSetter
+from controller.device_handler.devices.pump_device.states.all_states import HealthCheckState, LoadFluidState, UnloadFluidState, MTUnloadFluidState, SyringeSetter, CalibrationState
 
 class Pump(Device):
     
@@ -24,13 +24,15 @@ class Pump(Device):
         UNLOAD_FLUID = 3
         MT_INJECTION_UNLOAD = 4
         SYRINGE_SETTER = 5
+        CALIBRATE = 6
     
     state_classes = {
         States.HEALTH_CHECK_STATE: HealthCheckState,
         States.LOAD_FLUID: LoadFluidState,
         States.UNLOAD_FLUID: UnloadFluidState,
         States.MT_INJECTION_UNLOAD: MTUnloadFluidState,
-        States.SYRINGE_SETTER: SyringeSetter
+        States.SYRINGE_SETTER: SyringeSetter,
+        States.CALIBRATE: CalibrationState
         # Add more states here
     }
     

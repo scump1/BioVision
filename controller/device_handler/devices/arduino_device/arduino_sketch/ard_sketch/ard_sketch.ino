@@ -58,6 +58,7 @@ void pollSerial() {
         break;
 
       case 'T':  // Temperature Set Command
+        Serial.println("Y");
         while (!Serial.available());  // Wait until a float value is available
         target_temperature = Serial.parseFloat();
         Serial.println(target_temperature);
@@ -70,10 +71,11 @@ void pollSerial() {
         break;
 
       case 'S':  // Light Switch Command
+        Serial.println("Y");
         while (!Serial.available());  // Wait until a float value is available
-        angle = Serial.parseFloat();
-        Serial.println(angle);
+        angle = Serial.parseInt();
         adjust_servo_state();
+        Serial.println(angle);
         break;
     }
   }
@@ -153,7 +155,7 @@ void poll_temp() {
 void adjust_servo_state() {
   if (angle == 1) {
   light_servo.write(90);
-  } else {
+  } else if (angle == 0) {
     light_servo.write(0);
   }
 

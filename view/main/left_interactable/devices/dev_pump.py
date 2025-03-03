@@ -19,6 +19,8 @@ class UIPumpWidget(QWidget):
     
     def setupForm(self):
         
+        self.setMinimumSize(QSize(350, 150))
+        
         # Main layout that is set to self
         self.mainlayout = QVBoxLayout()
         
@@ -86,8 +88,9 @@ class UIPumpWidget(QWidget):
         self.volume_unload_unit = QLabel("μL")
         
         self.flowrate_label = QLabel("Flowrate")
-        self.flowrate_unload = QSpinBox()
-        self.flowrate_unload.setRange(1, 1000)
+        self.flowrate_unload = QDoubleSpinBox()
+        self.flowrate_unload.setDecimals(6)
+        self.flowrate_unload.setRange(0, 200)
         self.flowrate_unit = QLabel("μL/s")
         
         self.unload_volume_layout.addWidget(self.volume_unload_label)
@@ -146,10 +149,22 @@ class UIPumpWidget(QWidget):
         
         self.syringe_widget.setLayout(self.syringe_layout)
         
+        ### Calibration
+        self.calibration_widget = QWidget()
+        self.calibration_layout = QVBoxLayout()
+        
+        self.calibration_button = QPushButton("Calibration")
+        self.calibration_button.pressed.connect(self.calibration_button_action)
+        
+        self.calibration_layout.addWidget(self.calibration_button)
+        self.calibration_widget.setLayout(self.calibration_layout)
+                
         ### Main setter
         self.maintabwidget.addTab(self.load_widget, "Aspirate Fluid")
         self.maintabwidget.addTab(self.unload_widget, "Dispense Fluid")
         self.maintabwidget.addTab(self.syringe_widget, "Syringe Parameters")
+        self.maintabwidget.addTab(self.calibration_widget, "Calibration")
+        
         self.mainlayout.addWidget(self.maintabwidget)
         
         self.setLayout(self.mainlayout)
@@ -219,6 +234,20 @@ class UIPumpWidget(QWidget):
         if state is not None:
             self.load_button.setEnabled(state)
             self.unload_button.setEnabled(state)
+    
+    def calibration_button_action(self) -> None:
+        
+        # Warning
+        from view.main.mainframe import MainWindow
+        instance = MainWindow.get_instance()
+        
+        result = QMessageBox.warning(instance, "Calibration", "Please ensure the pump platform is viable for calibration, else damage to the device or syringe might be caused. Do you want to continue?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        
+        if result == QMessageBox.StandardButton.No:
+            return
+        
+        self.pump.add_task(self.pump.States.CALIBRATE, 0)
     
     def closeEvent(self, event: QCloseEvent):
         

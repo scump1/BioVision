@@ -53,7 +53,7 @@ class CalibrationState(State):
     def run_logic(self):
         
         if self.device.pump:
-            self.data.pump.calibrate()
+            self.device.pump.calibrate()
         
         else:
             self.logger.warning("Pump device is None.")

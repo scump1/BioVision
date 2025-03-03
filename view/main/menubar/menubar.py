@@ -120,9 +120,13 @@ class MenuBar(QMenuBar):
         self.actionDevicePump = QAction("Pump", self)
         self.actionDevicePump.triggered.connect(self.device_pump_action)
         
+        self.actionDeviceArduino = QAction("Arduino", self)
+        self.actionDeviceArduino.triggered.connect(self.device_arduino_action)
+        
         self.menuDevices.addAction(self.actionDeviceCamera)
         self.menuDevices.addAction(self.actionDeviceMFC)
         self.menuDevices.addAction(self.actionDevicePump)
+        self.menuDevices.addAction(self.actionDeviceArduino)
 
         # The "Documentation"
         self.actionDocumentation = QAction("Documentation", self)
@@ -408,6 +412,36 @@ class MenuBar(QMenuBar):
                 return
         
         self.ui_pump = UIPumpWidget()
+        self.ui_pump.setupForm()
+
+        subwindow = QMdiSubWindow()
+        subwindow.setWidget(self.ui_pump)
+
+        main_inst.middle_layout.mdi_area.addSubWindow(subwindow)
+
+        subwindow.show()
+        subwindow.resize(subwindow.size())
+
+    def device_arduino_action(self):
+        
+        from view.main.mainframe import MainWindow
+        from view.main.left_interactable.devices.dev_arduino import UIArduinoWidget
+
+        # First we check if the devices are even connected
+        device = self.data.get_data(self.data.Keys.ARDUINO, self.data.Namespaces.DEVICES)
+        if not device:
+            QMessageBox.information(MainWindow.get_instance(), "No Arduino", "There is currently no Arduino connected.")
+            return
+
+        main_inst = MainWindow.get_instance()
+
+        subwindows = main_inst.middle_layout.mdi_area.subWindowList()
+        for subwindow in subwindows:
+            if isinstance(subwindow.widget(), UIArduinoWidget):
+                QMessageBox.information(MainWindow.get_instance(), "Arduino Settings", "There is already a Pump window open.")
+                return
+        
+        self.ui_pump = UIArduinoWidget()
         self.ui_pump.setupForm()
 
         subwindow = QMdiSubWindow()

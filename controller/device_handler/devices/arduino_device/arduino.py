@@ -110,10 +110,6 @@ class Arduino(Device):
                     except Exception as e:
                         self.logger.error(f"Unexpected error: {e}")
 
-                else:
-                    self.serial_command_queue.put((command, response_event, response_list))
-                    time.sleep(0.1)
-
             # Signal that the response is ready
             response_event.set()
 

@@ -93,20 +93,21 @@ class LightSwitch(State):
             try:
                 
                 lightmode = self.data.get_data(self.data.Keys.LIGHTMODE, self.data.Namespaces.MEASUREMENT)
-                position = None
-                
+                position : int = None
+
                 if lightmode == False:
-                    position = 0
+                    position : int = 0
                 elif lightmode == True:
-                    position = 1
-                    
+                    position : int = 1
+                      
                 else:
                     self.logger.critical("Arduino light state not boolean.")
                     return    
-                
+                                                     
                 if position is not None:
                     _ = self.device.send_command("S")
-                    _ = self.device.send_command(position)
+                    _ = self.device.send_command(str(position))
+                    
                 else:
                     self.logger.warning("Tried to write [None] position to light switch.")
                 
