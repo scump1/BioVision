@@ -17,45 +17,9 @@ from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from operator_mod.eventbus.event_handler import EventManager
 from operator_mod.logger.global_logger import Logger
 
-class ResultWaiter(QThread):
-    """Background waiting for finished results and signaling.
-
-    Args:
-        QThread (Qt): runs a thread
-    """
-    progress = Signal(float)
-    
-    def __init__(self, img_number: int, interval: int) -> None:
-        """
-        Args: 
-            img_number (int): the amount of images that is givem
-            interval (int): a msec time interval to wait per image
-        """
-        super().__init__()
-        self.img_num = img_number
-        self.interval = interval
-
-    def run(self):
-        """Executed on start.
-        """
-        timer = QElapsedTimer()
-        
-        timer.start()
-        now = 0
-        end = self.img_num * self.interval
-        while timer.elapsed() < end:
-            
-            # Every second we emit the signal to increment the progressbar
-            r = timer.elapsed()
-            if abs(now - r) >= 500:
-                self.progress.emit(r/end)
-                now = r
-                
-            time.sleep(0.1)
-        
-        del timer
-            
 class PelletSizeWidghet(QTabWidget):
+
+    pellet_sizing_done = Signal()
 
     def __init__(self):
         
@@ -67,6 +31,11 @@ class PelletSizeWidghet(QTabWidget):
         self.algman = AlgorithmManager.get_instance()
         
         self.logger = Logger("Application").logger   
+        
+        self.pellet_sizing_done.connect(self.display_results)
+        
+        # Adding a reference to self into the datastore
+        self.data.add_data(self.data.Keys.PELLET_SIZER_WIDGET_REFERENCE, self, self.data.Namespaces.DEFAULT)
         
     def setupForm(self):
 
@@ -168,16 +137,6 @@ class PelletSizeWidghet(QTabWidget):
         self.data.add_data(self.data.Keys.PELLET_SIZER_IMAGES, filepaths, self.data.Namespaces.DEFAULT)
         self.data.add_data(self.data.Keys.PELLET_SIZER_IMAGE_SETTINGS, filesettings, self.data.Namespaces.DEFAULT)
         self.algman.add_task(self.algman.States.PELLET_SIZER_SINGLE_STATE, 0)
-        
-        imgnum = self.imageview.count()
-        avg_filesize = np.average(filesizes)
-        
-        waitertime = max(1, min(5, np.sqrt(avg_filesize))) * 1000
-        
-        self.waiter = ResultWaiter(imgnum, waitertime)
-        self.waiter.finished.connect(self.display_results)
-        self.waiter.progress.connect(self._progressbar_update)
-        self.waiter.start()
     
     ### Result logic
     def display_results(self) -> None:

@@ -40,7 +40,7 @@ class Preprocessor():
                 img = cv2.stackBlur(img, (5,5), 0)
             
             if self.settings[0] >= 0 :
-                _, img = cv2.threshold(img, 0, self.settings[0], cv2.THRESH_BINARY_INV)
+                _, img = cv2.threshold(img, self.settings[0], 255, cv2.THRESH_BINARY_INV)
             elif self.settings[0] < 0:
                 _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
         

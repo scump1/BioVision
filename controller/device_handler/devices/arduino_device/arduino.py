@@ -86,7 +86,8 @@ class Arduino(Device):
             command, response_event, response_list = self.serial_command_queue.get()
 
             with self.serial_lock:
-                if self.serial_con:
+                
+                if self.serial_con.writable():
                     try:
                         # Send command
                         self.serial_con.write(f"{command}\n".encode())
@@ -108,6 +109,10 @@ class Arduino(Device):
                         self.logger.error(f"Serial error: {e}")
                     except Exception as e:
                         self.logger.error(f"Unexpected error: {e}")
+
+                else:
+                    self.serial_command_queue.put((command, response_event, response_list))
+                    time.sleep(0.1)
 
             # Signal that the response is ready
             response_event.set()

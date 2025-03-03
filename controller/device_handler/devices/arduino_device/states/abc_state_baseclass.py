@@ -42,35 +42,6 @@ class State(ABC):
     def run_logic(self):
         pass
 
-    def _wait_for_response(self, expected_response=None, timeout=5):
-
-        start_time = time.time()
-        response = None
-        
-        while time.time() - start_time < timeout:
-            if self.device.serial_con.in_waiting > 0:
-                response = self.device.serial_con.readline().decode().strip()
-                
-                if response is not None:
-                    break
-                
-            if timeout > start_time:
-                self.logger.warning("Timeout condition reached.")
-                return False
-                
-        if expected_response is not None:
-            
-            expected_type = type(expected_response)
-            response = expected_type(response)
-        
-            if expected_response == response:
-                return True
-            return False
-        
-        elif response == "Y":
-            return True
-        return False
-
     def terminate(self):
         self.terminated = True
         

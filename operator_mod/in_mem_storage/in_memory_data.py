@@ -154,6 +154,8 @@ class InMemoryData:
         PELLET_SIZER_IMAGE_SETTINGS = "PelletSizerImageSettings"
         PELLET_SIZER_RESULT = "PelletSizerResult"
         
+        PELLET_SIZER_WIDGET_REFERENCE = "PelletSizerWidgetReference"
+        
     class Namespaces(Enum):
         CONTROLLER = "Controller"
         DEVICES = "Devices"

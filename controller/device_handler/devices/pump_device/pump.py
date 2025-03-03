@@ -2,8 +2,8 @@
 import sys
 sys.path.append("C:\\Users\\L. Pastwa\\AppData\\Local\\Programs\\CETONI_SDK\\lib\\python")
 
-# from qmixsdk import qmixbus # type: ignore
-# from qmixsdk import qmixpump # type: ignore
+from qmixsdk import qmixbus # type: ignore
+from qmixsdk import qmixpump # type: ignore
 
 import time
 import threading
@@ -55,14 +55,14 @@ class Pump(Device):
 
         self.await_mt_injection_event = threading.Event()
 
-        # try:
-        #     self._connect()
-        #     self._start_pump()
+        try:
+            self._connect()
+            self._start_pump()
             
-        #     self._fill_level = self.pump.get_fill_level() # retrieveing after Bus init
-        # except Exception as e:
-        #     self.logger.error(f"Could not connect to pump: {e}.")
-        #     self.data.add_data(self.data.Keys.PUMP, False, self.data.Namespaces.DEVICES)
+            self._fill_level = self.pump.get_fill_level() # retrieveing after Bus init
+        except Exception as e:
+            self.logger.error(f"Could not connect to pump: {e}.")
+            self.data.add_data(self.data.Keys.PUMP, False, self.data.Namespaces.DEVICES)
         
     def _connect(self):
         """
@@ -96,17 +96,7 @@ class Pump(Device):
             self.pump.clear_fault()
             
         if not self.pump.is_enabled():
-            self.pump.enable(True)
-            
-        self.logger.info("Calibrating pump.")
-        self.pump.calibrate()
-
-        calibration_finished = self._wait_calibration_finished()
-        if calibration_finished:
-            self.logger.info(f"Pump calibrated: {calibration_finished}.")
-            
-        else:
-            self.logger.error(f"Could not calibrate pump: {calibration_finished}.")        
+            self.pump.enable(True)     
     
     def __del__(self):
         

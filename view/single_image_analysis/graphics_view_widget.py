@@ -211,10 +211,10 @@ class ImageDisplaySettings(QWidget):
         settings_widget.setLayout(settings_layout)
         
         # Apply button
-        apply_button = QPushButton("Apply")
-        apply_button.pressed.connect(self._apply_settings)
+        self.apply_button = QPushButton("Apply")
+        self.apply_button.pressed.connect(self._apply_settings)
         
-        settings_layout.addWidget(apply_button, 4, 1)
+        settings_layout.addWidget(self.apply_button, 4, 1)
         
         # Adding to main
         mainlayout.addWidget(self.graphicsview)
@@ -270,6 +270,8 @@ class ImageDisplaySettings(QWidget):
 
     def _apply_settings(self) -> None:
         
+        self.apply_button.setText("Applied!")
+        
         if self.thresh_auto_checkbox.isChecked():
             value = -1
         else:
@@ -278,3 +280,5 @@ class ImageDisplaySettings(QWidget):
         blur = self.blur_picker_box.currentText()
         
         self.settings = [value, blur]
+        
+        self.apply_button.setText("Apply")

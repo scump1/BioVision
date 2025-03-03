@@ -41,13 +41,22 @@ class SyringeSetter(State):
         syringe_diameter = self.data.get_data(self.data.Keys.SYRINGE_DIAMETER, self.data.Namespaces.PUMP)
         syringe_length = self.data.get_data(self.data.Keys.SYRINGE_LENGTH, self.data.Namespaces.PUMP)
         
-        print(syringe_diameter, syringe_length)
         if type(syringe_diameter) == float and type(syringe_length) == float:
             
             self.device._syringeconfig(syringe_diameter, syringe_length)
             
         else:
             self.logger.error(f"Cloud not set syringe parameters: Diameter - {syringe_diameter}, Length - {syringe_length}.")
+
+class CalibrationState(State):
+    
+    def run_logic(self):
+        
+        if self.device.pump:
+            self.data.pump.calibrate()
+        
+        else:
+            self.logger.warning("Pump device is None.")
 
 class LoadFluidState(State):
     

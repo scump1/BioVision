@@ -101,15 +101,15 @@ class LightSwitch(State):
                     position = 1
                     
                 else:
+                    self.logger.critical("Arduino light state not boolean.")
                     return    
                 
-                self.device.serial_con.write('S\n'.encode())
-                self.device.serial_con.write(f"{position}\n".encode())
-                
-                if self._wait_for_response(expected_response=position):
-                    self.logger.info("Light switch set.")
+                if position is not None:
+                    _ = self.device.send_command("S")
+                    _ = self.device.send_command(position)
                 else:
-                    self.logger.warning(f"Unexpected response: {position}.")
+                    self.logger.warning("Tried to write [None] position to light switch.")
+                
             except Exception as e:
                 self.logger.error(f"Error in setting light switch: {e}.")
                 
@@ -130,12 +130,15 @@ class HealthCheckState(State):
                 self.data.add_data(self.data.Keys.ARDUINO, False, namespace=self.data.Namespaces.DEVICES)
                 return False
             
-            self.device.serial_con.write("H\n".encode())
-            if self._wait_for_response():
-                self.logger.info("Arduino healthy and connected.")
+            response = self.device.send_command("H")
+
+            if response[0] == "Y":
                 self.data.add_data(self.data.Keys.ARDUINO, True, namespace=self.data.Namespaces.DEVICES)
+                self.logger.info("Arduino operable.")
                 return True
-            
+            else:
+                self.logger.error("Arduino not operable.")
+
         except serial.SerialException as e:
             self.logger.error(f"Serial error in health check: {e}")
             self.data.add_data(self.data.Keys.ARDUINO, False, namespace=self.data.Namespaces.DEVICES)
@@ -152,10 +155,14 @@ class HealthCheckState(State):
 
         if self.device.serial_con:
             
-            if not self.check_device():
-                self.device._connect()
+            if self.check_device():
+                return
             
-            _ = self.check_device()
+            else:
+                self.device._connect()
+                
+                if self.check_device():
+                    return
 
         elif not self.device.serial_con:
             self.device._connect()
