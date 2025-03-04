@@ -1,11 +1,74 @@
 
 import datetime
 import time
+import os
+import re
 from concurrent.futures import ProcessPoolExecutor
 
+from model.measurements.mixing_time_datastruct import DataMixingTime
+
+from controller.algorithms.mixing_time.mixing_timer import MixingTimer
 from controller.algorithms.pellet_sizer.pellet_sizer import PelletSizer
 from controller.algorithms.bubble_sizer.bubble_sizer import BubbleSizeAnalyzer
 from controller.algorithms.algorithm_manager_class.states.state_baseclass import State
+
+class MixingTimerState(State):
+    
+    def run_logic(self):
+        
+        imagesfolder = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_IMAGES, self.data.Namespaces.MIXING_TIME)
+
+        emtpy_calibration_path = self.data.get_data(self.data.Keys.EMPTY_CALIBRATION_IMAGE_PATH, self.data.Namespaces.MIXING_TIME)
+        filled_calibration_path = self.data.get_data(self.data.Keys.FILLED_CALIBRATION_IMAGE_PATH, self.data.Namespaces.MIXING_TIME)
+       
+        images = self.prepare_images(imagesfolder)
+        
+        ### Here we start the computation
+        local_mixing_time = True # we should later be able to change this
+        
+        mixing_data = DataMixingTime()
+        mta = MixingTimer(emtpy_calibration_path, filled_calibration_path, local_mixing_time)
+        
+        futures = []
+        x_old, y_old = 0, 0
+        
+        with ProcessPoolExecutor() as executor:
+            
+            for file in images:
+                futures.append( executor.submit(mta.process_image, file) )
+                
+            for i, result in enumerate(futures):
+    
+                if not local_mixing_time:
+                    g_variance, g_entropy = result
+                    mixing_data.add_global_results(i, g_entropy, g_variance)
+                
+                else:
+                    g_variance, g_entropy, tile_size, tilenumbers, tile_data = result
+                    
+                    mixing_data.add_global_results(i, g_entropy, g_variance)
+                    mixing_data.add_tile(i, tile_data)
+
+                    x, y = tilenumbers
+                    if x > x_old or y > y_old:
+                        x_old, y_old = x, y
+                        mixing_data.add_local_metadata(tile_size, x, y)
+
+        self.data.add_data(self.data.Keys.MIXING_TIME_RESULT_STRUCT, mixing_data, self.data.Namespaces.MIXING_TIME)
+       
+    def prepare_images(self, dirpath : str) -> list:
+        
+        images = os.listdir('MT_Test_Nummer_3\\Images')
+        # Sorting the images numerically ascending
+        
+        sorted_files = sorted(images, key=self.extract_number)
+        sorted_files = [os.path.join('MT_Test_Nummer_3\\Images', image) for image in sorted_files]
+        
+        return sorted_files
+
+    def extract_number(self, filename) -> int:
+        match = re.search(r'(\d+)', filename)  # Extract number using regex
+        return int(match.group(0)) if match else 0  # Convert to int for sorting
 
 class PelletSizerSingleState(State):
     

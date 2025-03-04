@@ -3,7 +3,7 @@ import threading
 
 from operator_mod.logger.global_logger import Logger
 
-from controller.algorithms.algorithm_manager_class.states.all_states import BubbleSizerState, BubbleSizerSingleState, PelletSizerSingleState
+from controller.algorithms.algorithm_manager_class.states.all_states import BubbleSizerState, BubbleSizerSingleState, PelletSizerSingleState, MixingTimer
 from controller.algorithms.algorithm_manager_class.abc_class.state_machine_template import Manager
 
 class AlgorithmManager(Manager):
@@ -16,11 +16,14 @@ class AlgorithmManager(Manager):
         
         BUBBLE_SIZER_STATE = 2
         BUBBLE_SIZER_STATE_SINGLE = 3
+        
+        MIXING_TIMER_STATE = 5
     
     state_classes = {
         States.PELLET_SIZER_SINGLE_STATE: PelletSizerSingleState,
         States.BUBBLE_SIZER_STATE: BubbleSizerState,
-        States.BUBBLE_SIZER_STATE_SINGLE: BubbleSizerSingleState
+        States.BUBBLE_SIZER_STATE_SINGLE: BubbleSizerSingleState,
+        States.MIXING_TIMER_STATE: MixingTimer
         # Add more states here
     }
 

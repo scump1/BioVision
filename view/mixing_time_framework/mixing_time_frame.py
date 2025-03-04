@@ -66,7 +66,7 @@ class UIMixingTime(QWidget):
         mainlayout.setContentsMargins(5, 5, 5, 5)	
 
         naming_layout = QFormLayout()
-        name_label = QLabel("Name: ")
+        name_label = QLabel("Measurement Name: ")
         self.mt_name = QLineEdit()
         
         naming_layout.addRow(name_label, self.mt_name)

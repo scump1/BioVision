@@ -125,6 +125,8 @@ class InMemoryData:
         EMPTY_CALIBRATION_IMAGE_PATH = "EmptyCalibrationImagePath"
         FILLED_CALIBRATION_IMAGE_PATH = "FilledCalibrationImagePath"
         
+        MIXING_TIME_RESULT_STRUCT = "MixingTimeResultStruct"
+        
         # Project Management
         PROJECT_FOLDER_CONFIG = "ProjectFolderConfig"
         PROJECT_FOLDER_MEASUREMENT = "ProjectFolderMeasurement"
