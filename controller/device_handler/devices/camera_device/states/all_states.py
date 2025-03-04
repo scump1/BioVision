@@ -273,13 +273,13 @@ class ImageCaptureState(State):
             if self.mfc_interrupt:
                 self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
 
-            time.sleep(5)
+                time.sleep(5)
 
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, True, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
             
-            time.sleep(3)
+                time.sleep(3)
 
             img_count = 0
             formatted_time = datetime.datetime.now().strftime("%H_%M_%S")
