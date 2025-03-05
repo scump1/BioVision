@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QImage, QPixmap, QCloseEvent, QIcon
 
 from operator_mod.logger.global_logger import Logger
-from operator_mod.eventbus.event_handler import EventManager
+from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from controller.device_handler.devices.camera_device.camera import Camera
 from controller.device_handler.devices.camera_device.states.all_states import LiveViewState
 
@@ -24,10 +24,9 @@ class LiveViewAcquisition(QThread):
         super().__init__()
         
         self.camera = camera
-        self.running = False
+        self.running = True
         
     def run(self):
-        self.running = True
         try:
             
             self.camera.stream_on()  # Start streaming
@@ -50,29 +49,31 @@ class LiveViewAcquisition(QThread):
         finally:
             self.camera.stream_off()  # Stop streaming when the thread stops
 
-    def stop(self):
+    def stop_acquisition(self):
         self.running = False
-        self.wait()  # Wait for the thread to finish
         
 class LiveViewForm(QWidget):
     """
     Displays the live video feed from the camera (60FPS). 
     """
+    
+    live_view_state_entered = Signal()
+    
     def __init__(self) -> None:
         
         super().__init__()
 
         self.logger = Logger("Application").logger
-        self.events = EventManager()
         self.camera = Camera.get_instance()
+        self.data = InMemoryData()
         
         self.acquisiton_thread = None
         self.video_writer = None
         self.recording = False
         
+        self.data.add_data(self.data.Keys.LIVE_VIEW_STATE_FORM, self, self.data.Namespaces.DEFAULT)
         # Event registration
-        self.events.add_listener(self.events.EventKeys.LIVE_VIEW_STATE_ENTERED, self.live_view_start, 0, True)
-        self.events.add_listener(self.events.EventKeys.LIVE_VIEW_STATE_TERMINATED, self.live_view_stop, 0, True)
+        self.live_view_state_entered.connect(self.live_view_start)
         
         # Try to get camera object
         self.camera.add_task(self.camera.States.LIVE_VIEW_STATE, 0)
@@ -117,15 +118,6 @@ class LiveViewForm(QWidget):
             
         except Exception as e:
             self.logger.error(f"Not able to start live View: {e}.")
-
-    def live_view_stop(self):
-        
-        try:
-            if self.acquisition_thread:
-                self.acquisition_thread.stop()
-                self.acquisition_thread = None
-        except Exception:
-            self.logger.info("LiveView Form alreadz terminated.")
 
     def toggle_recording(self):
         
@@ -189,15 +181,21 @@ class LiveViewForm(QWidget):
 
     def closeEvent(self, event: QCloseEvent):
         try:
-            if self.acquisition_thread:
-                self.acquisition_thread.stop()
+              
+            # Tell thread to stop
+            if self.acquisition_thread and self.acquisition_thread.isRunning():
+                self.acquisition_thread.stop_acquisition()
+                # Wait for thread to finish
+                self.acquisition_thread.wait()
+            
+            if self.camera.get_current_state == LiveViewState:
+                self.camera.current_state.terminate()
 
-            current = self.camera.get_current_state
-            if current == LiveViewState:
-                self.camera.stop()
-                
+            self.data.add_data(self.data.Keys.LIVE_VIEW_STATE_FORM, None, self.data.Namespaces.DEFAULT)
+
         except Exception as e:
             self.logger.info(f"Live View - Closing Error: {e}")
+            
         finally:
             from view.main.mainframe import MainWindow
 

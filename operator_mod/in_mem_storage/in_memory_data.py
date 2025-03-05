@@ -133,6 +133,8 @@ class InMemoryData:
         PROJECT_FOLDER_USERDATA = "ProjectFolderUserData"
         PROJECT_PATH = "ProjectPath"
         
+        LIVE_VIEW_STATE_FORM = "LiveViewStateForm"
+        
         # Device Settings
         TEMPERATURE_SETTING = "TemperatureSetting"
         CAMERA_SETTINGS = "CameraSettings"

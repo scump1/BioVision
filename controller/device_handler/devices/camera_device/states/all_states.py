@@ -154,14 +154,14 @@ class LiveViewState(State):
     
     def run_logic(self):
         
-        self.events.trigger_event(self.events.EventKeys.LIVE_VIEW_STATE_ENTERED) # This signals the form that iut can grab the camera
+        instance = self.data.get_data(self.data.Keys.LIVE_VIEW_STATE_FORM, self.data.Namespaces.DEFAULT)
+        instance.live_view_state_entered.emit()
         
-        while self.device.task_queue.empty() and not self.terminated:
-            self.logger.info("Camera is in live mode.")
-            time.sleep(1)
+        self.logger.info("Camera is in live mode.")
 
-        self.events.trigger_event(self.events.EventKeys.LIVE_VIEW_STATE_TERMINATED) # As soon as this state terminates the form terminates its access to the camera
-
+        while not self.terminated:
+            time.sleep(0.1)
+            
 class CalibrationImageState(State):
     """DEPRECEATED DO NOT USE"""
     def run_logic(self):
