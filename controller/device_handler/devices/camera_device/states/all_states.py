@@ -287,7 +287,8 @@ class ImageCaptureState(State):
             # Grabbing the area of iterest
             area_enum = self.data.get_data(self.data.Keys.AREA_OF_INTERST, self.data.Namespaces.CAMERA)
             
-            x1, x2, y1, y2 = self.device.area_of_interests.get(area_enum, None)
+            if not area_enum == self.device.AreaOfInterest.ALL:
+                x1, x2, y1, y2 = self.device.area_of_interests.get(area_enum, None)
           
             # First we open up the cam stream
             self.device.cam.stream_on()
@@ -298,7 +299,9 @@ class ImageCaptureState(State):
                 if raw_img is not None:
                     rgb_image = raw_img.convert("RGB")
                     numpy_image = rgb_image.get_numpy_array()
-                    numpy_image = numpy_image[x1:x2, y1:y2]
+                    
+                    if not area_enum == self.device.AreaOfInterest.ALL:
+                        numpy_image = numpy_image[x1:x2, y1:y2]
                     
                     filename = f"Image_{formatted_time}_{img_count}.bmp"
                     filepath = os.path.join(self.path, filename)
