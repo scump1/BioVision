@@ -220,7 +220,7 @@ class ImageCaptureState(State):
             self.lightmode = False
             self.mfc_interrupt = False
             
-            if interval >= 5:
+            if interval >= 10:
                 self.arduino = Arduino.get_instance()
                 self.lightmode = self.data.get_data(self.data.Keys.CAMERA_LIGHTSWITCHING, self.data.Namespaces.MEASUREMENT)
             

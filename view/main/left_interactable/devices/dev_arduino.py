@@ -19,6 +19,8 @@ class UIArduinoWidget(QWidget):
         self.arudino = Arduino.get_instance()
         self.logger = Logger("Application").logger
         
+        self.current_light_state = None
+        
     def setupForm(self):
         
         self.mainlayout = QVBoxLayout()
@@ -31,7 +33,15 @@ class UIArduinoWidget(QWidget):
         
         self.current_light_state_layout = QFormLayout()
         self.current_light_label = QLabel("Light: ")
+        
         self.current_light_state = QLabel("OFF")
+        
+        current_state = self.data.get_data(self.data.Keys.LIGHTMODE, self.data.Namespaces.MEASUREMENT)
+        if current_state != None:
+            if current_state == True:
+                self.current_light_state.setText("ON")
+            elif current_state == False:
+                self.current_light_state.setText("OFF")
 
         self.current_light_state_layout.addRow(self.current_light_label, self.current_light_state)
         
@@ -57,7 +67,8 @@ class UIArduinoWidget(QWidget):
         current_state = self.data.get_data(self.data.Keys.LIGHTMODE, self.data.Namespaces.MEASUREMENT)
         
         if type(current_state) is bool:
-            self.data.add_data(self.data.Keys.LIGHTMODE, not current_state, self.data.Namespaces.MEASUREMENT)
+            new_state = not current_state
+            self.data.add_data(self.data.Keys.LIGHTMODE, new_state, self.data.Namespaces.MEASUREMENT)
             self.arudino.add_task(self.arudino.States.LIGHT_SWITCH_STATE, 0)
         
             if current_state is True:

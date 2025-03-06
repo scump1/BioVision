@@ -55,6 +55,8 @@ class Pump(Device):
         self.pump = None
         self._syringe_params = None # Gets set in the connector
 
+        self.pump_stopped_flag = False
+
         self.await_mt_injection_event = threading.Event()
 
         try:
@@ -143,8 +145,9 @@ class Pump(Device):
     def stop_pump(self):
         
         try:
+            self.pump_stopped_flag = True
             self.pump.stop_pumping()
-            
+        
         except Exception as e:
             self.logger.error(f"Could not stop pump: {e}.")
     
@@ -188,11 +191,14 @@ class Pump(Device):
         """
         timer = 0
         result = False
-        while (result == False) and (timer <= timeout):
+        while (result == False) and (timer <= timeout) and not self.pump_stopped_flag:
             result = self.pump.is_calibration_finished()
             timer += 0.5
             time.sleep(0.5)
-            
+        
+        self._fill_level = self.pump.get_fill_level()
+        self.pump_stopped_flag = False
+        
         return result
 
     def _wait_load_fluid(self, volume: float, flow: float):
@@ -205,14 +211,16 @@ class Pump(Device):
             timer = 0
             result = False
             
-            while (result == False) and timer <= timeframe:
+            while (result == False) and timer <= timeframe and not self.pump_stopped_flag:
                 self._fill_level = self.pump.get_fill_level()
                 if abs(self._fill_level - target_fill) <= 5:
                     result = True
 
                 timer += 0.5
                 time.sleep(0.5)
-                
+            
+            self.pump_stopped_flag = False
+
             return result
             
         else:
@@ -229,16 +237,19 @@ class Pump(Device):
             timer = 0
             result = False
             
-            while (result == False) and timer <= timeframe:
+            while (result == False) and timer <= timeframe and not self.pump_stopped_flag:
                 self._fill_level = self.pump.get_fill_level()
                 if abs(self._fill_level - target_fill) <= 5:
                     result = True
                 
                 timer += 0.5
+                print("Waiting for dispense!")
                 time.sleep(0.5)
-                
-            return result
             
+            self.pump_stopped_flag = False
+            
+            return result
+
         else:
             self.logger.warning(f"Tried waiting for dipsensing {volume} uL with {flow} uL/s.")
             return 

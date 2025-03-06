@@ -176,7 +176,7 @@ class UIMFCWidget(QWidget):
         
         try:
             self.massflow = self.data.get_data(self.data.Keys.MFC_MASSFLOW, self.data.Namespaces.MFC)
-            self.currentmassflow.setText(str(self.massflow))
+            self.currentmassflow.setText(f"{self.massflow:.2f}")
         except Exception as e:
             self.logger.warning(f"Could not read MFC massflow: {e}")
     

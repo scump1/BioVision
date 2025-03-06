@@ -19,7 +19,7 @@ class UIPumpWidget(QWidget):
     
     def setupForm(self):
         
-        self.setMinimumSize(QSize(350, 150))
+        self.setMinimumSize(QSize(500, 150))
         
         # Main layout that is set to self
         self.mainlayout = QVBoxLayout()
@@ -172,9 +172,7 @@ class UIPumpWidget(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self._update_info_labels)
         self.timer.start(500)
-        
-        self.resize(self.sizeHint())
-    
+            
     def load_button_action(self):
         
         load_volume = self.volume_load.value()
