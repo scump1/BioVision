@@ -92,7 +92,6 @@ class PelletSizerSingleState(State):
                 futures = []
                 for i, path in enumerate(self.target_paths):
                     
-                    print(f"Target path: {path}, target settings: {self.target_settings[i]}")
                     futures.append(executor.submit(pelletsizer.processing, path, True, self.target_settings[i]))
                 
                 reference._progressbar_update(0.5)

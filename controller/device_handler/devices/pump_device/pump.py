@@ -54,7 +54,8 @@ class Pump(Device):
         
         self.pump = None
         self._syringe_params = None # Gets set in the connector
-
+        self._fill_level = None
+        
         self.pump_stopped_flag = False
 
         self.await_mt_injection_event = threading.Event()
@@ -193,10 +194,10 @@ class Pump(Device):
         result = False
         while (result == False) and (timer <= timeout) and not self.pump_stopped_flag:
             result = self.pump.is_calibration_finished()
+            self._fill_level = self.pump.get_fill_level()
             timer += 0.5
             time.sleep(0.5)
         
-        self._fill_level = self.pump.get_fill_level()
         self.pump_stopped_flag = False
         
         return result
@@ -243,7 +244,6 @@ class Pump(Device):
                     result = True
                 
                 timer += 0.5
-                print("Waiting for dispense!")
                 time.sleep(0.5)
             
             self.pump_stopped_flag = False

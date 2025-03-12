@@ -38,7 +38,7 @@ class SettingsSetterState(State):
                 
                 self.logger.info(f"Sent command: T with temperature {temperature}.")
 
-                if response == str(temperature):
+                if response[0] == str(temperature):
                     self.logger.info("Temperature setting set.")
                 else:
                     self.logger.warning(f"Unexpected response: {response}.")

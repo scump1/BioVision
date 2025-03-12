@@ -242,7 +242,7 @@ class MeasurementRunner(threading.Thread):
 
                     self.cam_flag = True
                     camset.append(setting.setting.img_count) 
-                    camset.append(setting.setting.interval) 
+                    camset.append(setting.setting.interval)
 
                     self.camera_settings_setter(camset)
                     
@@ -306,7 +306,7 @@ class MeasurementRunner(threading.Thread):
             self.algman.add_task(self.algman.States.BUBBLE_SIZER_STATE, self.runtime_seconds)
             
         elif algorithm == RoutineData.AlgorithmType.PELLET_SIZE:
-            # TBD
+            self.logger.error(f"THIS PELLET SIZE ALGORITHM IS NOT IMPLENTED YET!")
             pass
     
     def lightmode_setter(self, lightmode):

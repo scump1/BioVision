@@ -3,7 +3,6 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
-
 from operator_mod.logger.global_logger import Logger
 from controller.device_handler.devices.arduino_device.arduino import Arduino
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
@@ -71,7 +70,7 @@ class UIArduinoWidget(QWidget):
             self.data.add_data(self.data.Keys.LIGHTMODE, new_state, self.data.Namespaces.MEASUREMENT)
             self.arudino.add_task(self.arudino.States.LIGHT_SWITCH_STATE, 0)
         
-            if current_state is True:
+            if new_state is True:
                 self.current_light_state.setText("ON")
             else:
                 self.current_light_state.setText("OFF")
