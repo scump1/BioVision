@@ -116,6 +116,8 @@ class InMemoryData:
         CAMERA_MASSFLOW_INTERRUPT = "CameraMassflowInterrupt"
         
         # MIXING TIME
+        CURRENT_MIXINGTIME_WIDGET = "CurrentMixingTimeWidget"
+        
         CURRENT_MIXINGTIME_FOLDER = "CurrentMixingTimeFolder"
         
         CURRENT_MIXINGTIME_FOLDER_CALIBRATION = "CurrentMixingTimeFolderCalibration"
@@ -126,6 +128,8 @@ class InMemoryData:
         FILLED_CALIBRATION_IMAGE_PATH = "FilledCalibrationImagePath"
         
         MIXING_TIME_RESULT_STRUCT = "MixingTimeResultStruct"
+        
+        LOCAL_MIXING_TIME_CALC = "LocalMixingTimeCalc"
         
         # Project Management
         PROJECT_FOLDER_CONFIG = "ProjectFolderConfig"

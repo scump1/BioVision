@@ -7,6 +7,7 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 
 from operator_mod.measurements.mixing_time_handler import MixingTimeHandler
+from model.measurements.mixing_time_datastruct import DataMixingTime
 
 from controller.device_handler.devices.pump_device.pump import Pump
 
@@ -17,6 +18,7 @@ from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 class UIMixingTime(QWidget):
 
     progress_signal = Signal(int, str)
+    results_done = Signal()
 
     def __init__(self):
         
@@ -30,6 +32,10 @@ class UIMixingTime(QWidget):
         self.mixingtime_handler = MixingTimeHandler()
         
         self.progress_signal.connect(self._progressbar_update)
+        self.results_done.connect(self._show_results)
+        
+        # Adding the reference to the datastore
+        self.data.add_data(self.data.Keys.CURRENT_MIXINGTIME_WIDGET, self, self.data.Namespaces.MIXING_TIME)
         
         # State switches
         self.calibration_done = False
@@ -50,6 +56,10 @@ class UIMixingTime(QWidget):
         
         start_mixing = self.start_mixing_page()
         self.stacked_layout.addWidget(start_mixing)
+        
+        # Results page
+        result_page = self.resultpage()
+        self.stacked_layout.addWidget(result_page)
         
         self.mainlayout.addLayout(self.stacked_layout)
         
@@ -90,7 +100,7 @@ class UIMixingTime(QWidget):
         self.volume_value.setRange(0, 2500)
         self.volume_value.setSingleStep(1)
         volume_label_unit = QLabel("µL")
-        
+
         ### Add widgets to the grid layout
         setting_layout.addWidget(massflow_label, 0, 0)
         setting_layout.addWidget(self.massflow_value, 0, 1)
@@ -103,6 +113,13 @@ class UIMixingTime(QWidget):
         ### Other options
         self.result_show_option = QCheckBox("Show Results")
         setting_layout.addWidget(self.result_show_option, 2, 0, 1, 3)
+        
+        self.local_mixing_time_calc = QCheckBox("Calculate Local Mixing Time")
+        self.local_mixing_time_calc.stateChanged.connect(lambda: self._local_mixing_time_checkbox(self.local_mixing_time_calc.isChecked()))
+        setting_layout.addWidget(self.local_mixing_time_calc, 3, 0, 1, 3)
+        
+        # Preset the Local Mixing Time Var
+        self._local_mixing_time_checkbox(False)
         
         settings_groupbox.setLayout(setting_layout)
         mainlayout.addWidget(settings_groupbox)
@@ -174,11 +191,38 @@ class UIMixingTime(QWidget):
         
         return start_mixing_page
     
+    def resultpage(self) -> QWidget:
+        
+        resultwidget = QWidget()
+        resultlayout = QVBoxLayout()
+        
+        resultwidget.setLayout(resultlayout)
+        
+        return resultwidget
+    
+    def _show_results(self) -> None:
+        
+        data : DataMixingTime = self.data.get_data(self.data.Keys.MIXING_TIME_RESULT_STRUCT, self.data.Namespaces.MIXING_TIME)
+        print(data)
+        
+        entropy_value_list = []
+        variance_value_list = []
+        
+        for img in data.global_mixing_data["entropy"].keys():
+            entropy_value_list.append(data.global_mixing_data["entropy"][img])
+    
+            variance_value_list.append(data.global_mixing_data["variance"][img])
+            
+        ###
+    
     def _empty_checbutton_action(self, state: bool):
         self.empty_reactor_fulfilled.setEnabled(state)
     
     def _filled_checbutton_action(self, state: bool):
         self.fill_reactor_fulfilled.setEnabled(state)
+    
+    def _local_mixing_time_checkbox(self, state: bool):
+        self.data.add_data(self.data.Keys.LOCAL_MIXING_TIME_CALC, state, self.data.Namespaces.MIXING_TIME)
     
     def _start_routine_button_action(self):
         

@@ -37,10 +37,9 @@ class Plotter:
                 ax_y.spines['right'].set_position(('outward', 60 * i))  # Offset each additional y-axis
                 secondary_axes.append(ax_y)
 
-            color = f"C{i+1}"  # Use color cycle to assign different colors
-            ax_y.plot(x, y_values, color=color, **plot_kwargs)
-            ax_y.set_ylabel(f'{key}', color=color)  # Set the label for each secondary y-axis
-            ax_y.tick_params(axis='y', labelcolor=color)
+            ax_y.plot(x, y_values, **plot_kwargs)
+            ax_y.set_ylabel(f'{key}')  # Set the label for each secondary y-axis
+            ax_y.tick_params(axis='y')
 
         # Set plot title if provided
         if title:
@@ -94,11 +93,11 @@ if __name__ == "__main__":
     plotter = Plotter()
     # Generate the plot widget
     plot_widget = plotter.plot(
-        [1, 2, 3], [4, 5, 6],
-        xlabel='X-axis Label',
-        ylabel='Y-axis Label',
+        [1, 2, 3], {1: [0.5, 1, 1.5], "Nochmal Mischzeit": [10, 20, 30]}, # Wir konnen mehrere y Achsen haben!
+        xlabel='Time',
+        ylabel='Mischzeit',
         title='Sample Plot',
-        color='b',         # Additional plot customization
+        color='r',         # Additional plot customization
         linestyle='-'     # Additional plot customization
     )
 

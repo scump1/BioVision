@@ -472,10 +472,10 @@ class MenuBar(QMenuBar):
                 return
         
         self.ui_pump = UIMixingTime()
-        self.ui_pump.setupForm()
 
         subwindow = QMdiSubWindow()
         subwindow.setWidget(self.ui_pump)
+        self.ui_pump.setupForm()
 
         main_inst.middle_layout.mdi_area.addSubWindow(subwindow)
 

@@ -24,7 +24,10 @@ class MixingTimerState(State):
         images = self.prepare_images(imagesfolder)
         
         ### Here we start the computation
-        local_mixing_time = True # we should later be able to change this
+        local_mixing_time = self.data.get_data(self.data.Keys.LOCAL_MIXING_TIME_CALC, self.data.Namespaces.MIXING_TIME)
+        
+        if local_mixing_time is None:
+            local_mixing_time = False
         
         mixing_data = DataMixingTime()
         mta = MixingTimer(emtpy_calibration_path, filled_calibration_path, local_mixing_time)
@@ -55,14 +58,18 @@ class MixingTimerState(State):
                         mixing_data.add_local_metadata(tile_size, x, y)
 
         self.data.add_data(self.data.Keys.MIXING_TIME_RESULT_STRUCT, mixing_data, self.data.Namespaces.MIXING_TIME)
-       
+        
+        reference = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_WIDGET, self.data.Namespaces.MIXING_TIME)
+        if reference is not None:
+            reference.results_done.emit()
+               
     def prepare_images(self, dirpath : str) -> list:
         
-        images = os.listdir('MT_Test_Nummer_3\\Images')
+        images = os.listdir(dirpath)
         # Sorting the images numerically ascending
         
         sorted_files = sorted(images, key=self.extract_number)
-        sorted_files = [os.path.join('MT_Test_Nummer_3\\Images', image) for image in sorted_files]
+        sorted_files = [os.path.join(dirpath, image) for image in sorted_files]
         
         return sorted_files
 

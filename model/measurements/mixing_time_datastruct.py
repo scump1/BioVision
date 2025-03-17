@@ -18,8 +18,8 @@ class DataMixingTime:
         if image_index not in self.global_mixing_data:
             self.global_mixing_data[image_index] = {}
             
-        self.global_mixing_data[image_index]["entropy"] = entropy
-        self.global_mixing_data[image_index]["variance"] = variance
+        self.global_mixing_data["entropy"][image_index] = entropy
+        self.global_mixing_data["variance"][image_index] = variance
     
     # For the local mixing time
     def add_tile(self, image_index: int, value: any):
