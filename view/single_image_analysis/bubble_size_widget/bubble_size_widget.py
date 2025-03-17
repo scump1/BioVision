@@ -5,7 +5,6 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
-import time
 import cv2
 
 from view.single_image_analysis.graphics_view_widget import ImageDisplay
@@ -15,44 +14,25 @@ from model.utils.SQL.sql_manager import SQLManager
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from operator_mod.eventbus.event_handler import EventManager
 from operator_mod.logger.global_logger import Logger
-
-class ResultWaiter(QThread):
-    
-    progress = Signal(float)
-    
-    def __init__(self) -> None:
-        super().__init__()
-
-    def run(self):
-        
-        timer = QElapsedTimer()
-        
-        timer.start()
-        now = 0
-        while timer.elapsed() < 2000:
-            
-            # Every second we emit the signal to increment the progressbar
-            r = timer.elapsed()
-            if abs(now - r) >= 500:
-                self.progress.emit(r/500)
-                now = r
-                
-            time.sleep(0.1)
-        
-        del timer
             
 class BubbleSizeWidget(QTabWidget):
+    
+    result_calc_finished = Signal()
     
     def __init__(self):
         
         super().__init__()
+        
+        self.result_calc_finished.connect(self._finished_signal_connect)
         
         self.data = InMemoryData()
         self.events = EventManager.get_instance()
         
         self.algman = AlgorithmManager.get_instance()
         self.sqlmanager = SQLManager()
-                
+        
+        self.data.add_data(self.data.Keys.BUBBLE_SIZER_WIDGET_REFERENCE, self, self.data.Namespaces.DEFAULT)
+        
         self.logger = Logger("Application").logger        
         
     def setupForm(self):
@@ -178,14 +158,6 @@ class BubbleSizeWidget(QTabWidget):
         # The paths are already in the datastore anyways (see calib dialog button)
         
         self.algman.add_task(self.algman.States.BUBBLE_SIZER_STATE_SINGLE, 0)
-
-        self.worker = ResultWaiter()
-        
-        self.worker.finished.connect(self._finished_signal_connect)
-        self.worker.progress.connect(self._progressbar_update)
-        
-        self.worker.start()
-        # We continue in the function taht is connected to the finished signal below
 
     def _finished_signal_connect(self):
         

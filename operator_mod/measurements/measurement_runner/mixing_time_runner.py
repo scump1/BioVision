@@ -6,6 +6,7 @@ from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from operator_mod.logger.global_logger import Logger
 from operator_mod.logger.progress_logger import ProgressLogger
 
+from controller.algorithms.algorithm_manager_class.algorithm_manager import AlgorithmManager
 from controller.device_handler.devices.camera_device.camera import Camera
 from controller.device_handler.devices.pump_device.pump import Pump
 from controller.device_handler.devices.mfc_device.mfc import MFC
@@ -29,6 +30,7 @@ class MixingTimeRunner(threading.Thread):
         self.airflow = airflow
         self.injection_volume = injection_volume
         
+        self.algman = AlgorithmManager.get_instance()
         self.camera  = Camera.get_instance()
         self.pump = Pump.get_instance()
         self.mfc = MFC.get_instance()
@@ -63,6 +65,8 @@ class MixingTimeRunner(threading.Thread):
         
         self.cleanup()
         
+        self.algman.add_task(self.algman.States.MIXING_TIMER_STATE, 0)
+        
     def prepare(self):
         """
         Brings the camera, mfc and pump into the correct state for the measurement. Alles devices have a threading.Event() to wait for their start.
@@ -79,6 +83,7 @@ class MixingTimeRunner(threading.Thread):
         self.mfc.add_task(self.mfc.States.SETTING_SETTER_STATE, 0)
         
         time.sleep(1)
+        
         # Check for success
         success : bool = self.data.get_data(self.data.Keys.MFC_SETTINGS_SUCCESS, self.data.Namespaces.MFC)
         if not success:

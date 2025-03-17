@@ -99,7 +99,7 @@ class MTImagecaptureState(State):
             self.overall_count = 0
             
             self.device.mt_await_capture_start_event.wait()
-            self.start_img_cap(6, 1)
+            self.start_img_cap(30, 1)
             
             while datetime.datetime.now() < self.runtime_target and not self.terminated:
                 self.logger.info("Camera - Image Capturing working.")

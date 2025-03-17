@@ -21,9 +21,12 @@ class MixingTimerState(State):
         emtpy_calibration_path = self.data.get_data(self.data.Keys.EMPTY_CALIBRATION_IMAGE_PATH, self.data.Namespaces.MIXING_TIME)
         filled_calibration_path = self.data.get_data(self.data.Keys.FILLED_CALIBRATION_IMAGE_PATH, self.data.Namespaces.MIXING_TIME)
        
+        if not os.path.exists(imagesfolder) or not os.path.exists(emtpy_calibration_path) or not os.path.exists(filled_calibration_path):
+            self.logger.error("Non-existing resource for Mixing Time Calculator.")
+            return
+       
         images = self.prepare_images(imagesfolder)
         
-        ### Here we start the computation
         local_mixing_time = self.data.get_data(self.data.Keys.LOCAL_MIXING_TIME_CALC, self.data.Namespaces.MIXING_TIME)
         
         if local_mixing_time is None:
@@ -142,6 +145,10 @@ class BubbleSizerSingleState(State):
                 
                 if result is not None:
                     self.data.add_data(self.data.Keys.SI_RESULT, result, self.data.Namespaces.DEFAULT)
+                    
+                    reference = self.data.get_data(self.data.Keys.BUBBLE_SIZER_WIDGET_REFERENCE, self.data.Namespaces.DEFAULT)
+                    reference.result_calc_finished.emit()
+                    
                 else:
                     self.logger.warning("Null future return.")   
                            

@@ -163,6 +163,7 @@ class InMemoryData:
         PELLET_SIZER_RESULT = "PelletSizerResult"
         
         PELLET_SIZER_WIDGET_REFERENCE = "PelletSizerWidgetReference"
+        BUBBLE_SIZER_WIDGET_REFERENCE = "BubbleSizeWidgetReference"
         
     class Namespaces(Enum):
         CONTROLLER = "Controller"
