@@ -120,7 +120,7 @@ class MenuBar(QMenuBar):
         self.actionDevicePump = QAction("Pump", self)
         self.actionDevicePump.triggered.connect(self.device_pump_action)
         
-        self.actionDeviceArduino = QAction("Arduino", self)
+        self.actionDeviceArduino = QAction("Light", self)
         self.actionDeviceArduino.triggered.connect(self.device_arduino_action)
         
         self.menuDevices.addAction(self.actionDeviceCamera)

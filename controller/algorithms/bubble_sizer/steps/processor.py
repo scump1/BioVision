@@ -119,7 +119,7 @@ class ImageProcessor:
             radius = cv2.pointPolygonTest(cont, (cX, cY), True)
             
             # mathmatical radius comes from the area assuming a perfect circle
-            mradius = np.sqrt(4 * area / np.pi)
+            mradius = np.sqrt(area / np.pi)
             radius_deviation = radius / mradius
             
             bubble = [(cX, cY), area, perimeter, mradius, circularity, radius_deviation]
@@ -235,7 +235,7 @@ class ImageProcessor:
                 _, (major, minor), _ = ellipse  # Unpacking ellipse parameters
                                 
                 # Filtering based on ellipse dimensions and aspect ratio
-                if major < 5 or minor < 5:
+                if major < 10 or minor < 10:
                     continue  # Skip small ellipses
 
                 aspect_ratio = major / minor if minor != 0 else 0

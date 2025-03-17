@@ -58,12 +58,12 @@ class PostProcessor:
 
         for ellipse in self.ellipses:
             try:
-                center, (major, minor), angle = ellipse
+                center, (major, minor), _ = ellipse
                 cx, cy = center
 
                 # Projected area and equivalent diameter
                 A_proj = np.pi * (major / 2) * (minor / 2)
-                radius = np.sqrt(4 * A_proj / np.pi)
+                radius = np.sqrt(A_proj / np.pi)
                 D_eq = radius * 2
 
                 # Sphericity

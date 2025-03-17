@@ -229,15 +229,15 @@ class UIMixingTime(QWidget):
         
         plotted_entropy_widget = plotter.plot(
             x_time_values, {"Entropy": entropy_value_list},
-            xlabel="Frame []",
-            ylabel="Entropy []",
+            xlabel="Frame [-]",
+            ylabel="Entropy [-]",
             title="Entropy over frames"
         )
         
         plotted_variance_widget = plotter.plot(
             x_time_values, {"Variance": variance_value_list},
-            xlabel="Frame []",
-            ylabel="Variance []",
+            xlabel="Frame [-]",
+            ylabel="Variance [-]",
             title="Variance over frames"
         )
     
