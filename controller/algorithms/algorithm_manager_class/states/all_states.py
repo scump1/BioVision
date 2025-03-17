@@ -215,7 +215,7 @@ class BubbleSizerState(State):
 
                     for future in futures:
                     
-                        result = future.result(timeout=5)  # A single images takes about 300ms so 5s blocking call should be PLENTY
+                        result = future.result()
                         
                         if result is not None:
                             self.alg_data_writer.bubble_size_writer(result)

@@ -1,5 +1,6 @@
 import time
 import os
+import numpy as np
 from uuid import uuid4
 
 from PySide6.QtWidgets import *
@@ -9,6 +10,7 @@ from PySide6.QtCore import *
 from operator_mod.measurements.mixing_time_handler import MixingTimeHandler
 from model.measurements.mixing_time_datastruct import DataMixingTime
 
+from controller.functions.plotter.plotter import Plotter
 from controller.device_handler.devices.pump_device.pump import Pump
 
 from operator_mod.logger.global_logger import Logger
@@ -196,6 +198,8 @@ class UIMixingTime(QWidget):
         resultwidget = QWidget()
         resultlayout = QVBoxLayout()
         
+        self.result_plots_widget = QTabWidget()
+        
         resultwidget.setLayout(resultlayout)
         
         return resultwidget
@@ -203,17 +207,48 @@ class UIMixingTime(QWidget):
     def _show_results(self) -> None:
         
         data : DataMixingTime = self.data.get_data(self.data.Keys.MIXING_TIME_RESULT_STRUCT, self.data.Namespaces.MIXING_TIME)
-        print(data)
         
+        if data is None:
+            self.logger.warning("Data Mixing Time Struct is None!")
+            return
+        
+        x_time_values = len(data.global_mixing_data["entropy"].keys())
         entropy_value_list = []
         variance_value_list = []
         
         for img in data.global_mixing_data["entropy"].keys():
             entropy_value_list.append(data.global_mixing_data["entropy"][img])
-    
             variance_value_list.append(data.global_mixing_data["variance"][img])
-            
-        ###
+        
+        # Using this later
+        entropy_normed = [float(i)/sum(entropy_value_list) for i in entropy_value_list]
+        variance_normed = [float(j)/sum(variance_value_list) for j in variance_value_list]
+        
+        # We aquire the plotter here
+        plotter = Plotter()
+        
+        plotted_entropy_widget = plotter.plot(
+            x_time_values, {"Entropy": entropy_value_list},
+            xlabel="Frame []",
+            ylabel="Entropy []",
+            title="Entropy over frames"
+        )
+        
+        plotted_variance_widget = plotter.plot(
+            x_time_values, {"Variance": variance_value_list},
+            xlabel="Frame []",
+            ylabel="Variance []",
+            title="Variance over frames"
+        )
+    
+        if self.result_plots_widget.count() > 0:
+            for i in range(self.result_plots_widget.count() -1):
+                self.result_plots_widget.removeTab(i)
+    
+        self.result_plots_widget.addTab(plotted_entropy_widget, "Entropy")
+        self.result_plots_widget.addTab(plotted_variance_widget, "Variance")
+        
+        self.stacked_layout.setCurrentIndex(4)
     
     def _empty_checbutton_action(self, state: bool):
         self.empty_reactor_fulfilled.setEnabled(state)
