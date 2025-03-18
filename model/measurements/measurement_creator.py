@@ -107,13 +107,11 @@ class MeasurementCreator:
     def _create_registry(self, name):
                 
         # We check if there is already a measurement register
-        sql_path = self.resman.get_registered_resources("MeasurementRegister", False, True)
+        sql_path = self.data.get_data(self.data.Keys.MEASUREMENT_REGISTRY_SQL, self.data.Namespaces.PROJECT_MANAGEMENT)
         
-        if not sql_path:
-            userdata_path = self.data.get_data(self.data.Keys.PROJECT_FOLDER_USERDATA, namespace=self.data.Namespaces.PROJECT_MANAGEMENT)
-            sql_path = os.path.join(userdata_path, "userdata.db")
-        else:
-            sql_path = sql_path[0]
+        if not os.path.exists(sql_path):
+            self.logger.warning("Measurement Registry does not exists.")
+            return   
             
         data = {"Name": name, "StartTime": datetime.datetime.now().strftime("%H:%M:%S")}
         table_creation, insert = self.sql.generate_sql_statements("MeasurementRegistry", data)

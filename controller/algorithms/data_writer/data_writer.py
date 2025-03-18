@@ -29,12 +29,7 @@ class DataWriter:
         Return:
             None
         """
-        try:
-            
-            if len(results["Data"]) <= 0:
-                self.logger.error("Faulty length of bubble size data array.")
-                return
-            
+        try:            
             result_db = self.data.get_data(self.data.Keys.CURRENT_SLOT_RESULT_DB, namespace=self.data.Namespaces.MEASUREMENT)
 
             keys = ["CenterX", "CenterY", "EquivalentDiameter", "Area", "SurfaceArea", "Volume", "SpecificSurfaceVolume", "SauterDiameter", "Circularity"]

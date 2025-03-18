@@ -64,6 +64,15 @@ class SaveProject:
                 subfolder_path = os.path.join(new_path, subfolder)
                 self.data.add_data(intern_subfolder[i], str(subfolder_path), namespace=self.data.Namespaces.PROJECT_MANAGEMENT)
 
+            # Here we should move the MeasurementRegistry Later
+            old_registry_path = self.data.get_data(self.data.Keys.MEASUREMENT_REGISTRY_SQL, self.data.Namespaces.PROJECT_MANAGEMENT)
+            registry_basename = os.path.basename(old_registry_path)
+            
+            userdata = self.data.get_data(self.data.Keys.PROJECT_FOLDER_USERDATA, self.data.Namespaces.PROJECT_MANAGEMENT)
+            
+            new_registry_path = os.path.join(userdata, registry_basename)
+            self.data.add_data(self.data.Keys.MEASUREMENT_REGISTRY_SQL, new_registry_path, self.data.Namespaces.PROJECT_MANAGEMENT)
+
             # Move the project directory
             shutil.move(pj_path, dir_path)
             self.res_man.register_resource(os.path.basename(dir_path), dir_path, "SaveLocations")

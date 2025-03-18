@@ -127,6 +127,12 @@ class LeftInteractable(QVBoxLayout):
         self.newfolder_button.setIcon(QIcon(r"view\main\left_interactable\resources\new-tab.png"))
         self.newfolder_button.clicked.connect(self.newfolder_button_action)
 
+        ### Adding a delete folder functionality here
+        self.delete_folder_button = QPushButton()
+        self.delete_folder_button.setFixedSize(QSize(25, 25))
+        self.delete_folder_button.setIcon(QIcon(r"view\main\left_interactable\resources\trash-can.png"))
+        self.delete_folder_button.clicked.connect(self.delete_folder_button_action)
+
         self.explorer_button = QPushButton()
         self.explorer_button.setFixedSize(QSize(25, 25))
         self.explorer_button.setIcon(QIcon(r"view\main\left_interactable\resources\arrow-up-right-from-square.png"))
@@ -135,6 +141,7 @@ class LeftInteractable(QVBoxLayout):
         self.button_layout.addWidget(self.back_button)
         self.button_layout.addWidget(self.forward_button)
         self.button_layout.addWidget(self.newfolder_button)
+        self.button_layout.addWidget(self.delete_folder_button)
         self.button_layout.addWidget(self.explorer_button)
 
         self.general_layout.addLayout(self.button_layout)
@@ -190,6 +197,13 @@ class LeftInteractable(QVBoxLayout):
                 path = os.path.join(pjpath, folder_name)
             os.makedirs(path)
             os.chmod(path, stat.S_IWRITE) 
+
+    def delete_folder_button_action(self):
+        
+        curridx = self.project_explorer.currentIndex()
+        currpath = self.file_model.filePath(self.proxy_model.mapToSource(curridx))
+        
+        print(currpath)
 
     def explorer_open_action(self):
 

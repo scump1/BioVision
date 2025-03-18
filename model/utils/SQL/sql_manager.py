@@ -51,7 +51,7 @@ class SQLManager:
                     await self._connection.commit()
                 return True
             except Exception as e:
-                self.sqllogger.error(f"Wrting Error: {e}")
+                self.sqllogger.error(f"Writing Error: {e}")
                 return False
 
     async def _read(self, query: str) -> list:

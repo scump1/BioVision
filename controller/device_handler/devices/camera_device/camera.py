@@ -50,7 +50,7 @@ class Camera(Device):
         
     area_of_interests = {
         AreaOfInterest.ALL: [],
-        AreaOfInterest.COLUMN: [600, 2500, 1700, 2175],
+        AreaOfInterest.COLUMN: [600, 2500, 1700, 2100],
         AreaOfInterest.COLUMN_WITH_TOP: [600, 3000, 1700, 2175]
     }
 
@@ -69,7 +69,7 @@ class Camera(Device):
         self.configurations = ConfigurationManager.get_instance()
         
         # Standard Value
-        self.data.add_data(self.data.Keys.AREA_OF_INTERST, self.AreaOfInterest.ALL, self.data.Namespaces.CAMERA)
+        self.data.add_data(self.data.Keys.AREA_OF_INTERST, self.AreaOfInterest.COLUMN, self.data.Namespaces.CAMERA)
         
         # The camera device
         self.cam = None

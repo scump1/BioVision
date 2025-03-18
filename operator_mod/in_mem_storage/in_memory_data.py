@@ -139,6 +139,8 @@ class InMemoryData:
         
         LIVE_VIEW_STATE_FORM = "LiveViewStateForm"
         
+        MEASUREMENT_REGISTRY_SQL = "MeasurementRegistrySQL"
+        
         # Device Settings
         TEMPERATURE_SETTING = "TemperatureSetting"
         CAMERA_SETTINGS = "CameraSettings"

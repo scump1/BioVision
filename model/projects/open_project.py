@@ -72,7 +72,8 @@ class OpenProject:
                 filepath = os.path.join(path, file)
                 
                 if file.endswith(".db"):
-                    self.res_manager.register_resource(file, filepath, "MeasurementRegister")
+                    self.data.add_data(self.data.Keys.MEASUREMENT_REGISTRY_SQL, filepath, self.data.Namespaces.PROJECT_MANAGEMENT)
+                    
                 elif file.endswith(".json"):
 
                     # If the necessarz file exists we can just load it directlz from the configuration manager

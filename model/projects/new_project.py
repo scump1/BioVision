@@ -13,11 +13,14 @@ from operator_mod.eventbus.event_handler import EventManager
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from operator_mod.logger.global_logger import Logger
 
+from model.utils.SQL.sql_manager import SQLManager
+
 class NewProject:
 
     def __init__(self):
 
         self.data = InMemoryData()
+        self.sql_manager = SQLManager()
         self.logger = Logger("Application").logger
 
         self.event_manager = EventManager.get_instance()
@@ -106,6 +109,16 @@ class NewProject:
         with open(config_file_path, 'w') as config_file:
             json.dump(config_data, config_file, indent=4)
 
+        ### We create the Measurement Register here
+        userdata_path = self.data.get_data(self.data.Keys.PROJECT_FOLDER_USERDATA, namespace=self.data.Namespaces.PROJECT_MANAGEMENT)
+        sql_file_path = os.path.join(userdata_path, "MeasurementRegister.db")
+        
+        table, query = self.sql_manager.generate_sql_statements("Metadata", {"Time": datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")})
+
+        self.sql_manager.read_or_write(sql_file_path, table, "write")
+        self.sql_manager.read_or_write(sql_file_path, query, "write")
+        
+        self.data.add_data(self.data.Keys.MEASUREMENT_REGISTRY_SQL, sql_file_path, self.data.Namespaces.PROJECT_MANAGEMENT)
 
     def get_next_directory_name(self, base_path):
         """
