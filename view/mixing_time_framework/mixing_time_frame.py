@@ -39,6 +39,7 @@ class UIMixingTime(QWidget):
         # Adding the reference to the datastore
         self.data.add_data(self.data.Keys.CURRENT_MIXINGTIME_WIDGET, self, self.data.Namespaces.MIXING_TIME)
         
+        self.timer = None
         # State switches
         self.calibration_done = False
         
@@ -199,6 +200,7 @@ class UIMixingTime(QWidget):
         resultlayout = QVBoxLayout()
         
         self.result_plots_widget = QTabWidget()
+        resultlayout.addWidget(self.result_plots_widget)
         
         resultwidget.setLayout(resultlayout)
         
@@ -212,7 +214,7 @@ class UIMixingTime(QWidget):
             self.logger.warning("Data Mixing Time Struct is None!")
             return
         
-        x_time_values = len(data.global_mixing_data["entropy"].keys())
+        x_time_values =[i for i in range(len(data.global_mixing_data["entropy"].keys()))] 
         entropy_value_list = []
         variance_value_list = []
         
@@ -360,10 +362,11 @@ class UIMixingTime(QWidget):
         time.sleep(2)
         # the used progress tracker for the mixing time
         progress = ProgressLogger(handle)
+        progress.add_scorespace('mixing_time', 100)
         
         self.timer = QTimer()
         self.timer.timeout.connect(lambda: self._check_progress(progress))
-        self.timer.start(1000)
+        self.timer.start(250)
     
     def _check_progress(self, progress: ProgressLogger):
         
@@ -426,8 +429,9 @@ class UIMixingTime(QWidget):
     def closeEvent(self, event):
         
         try:
-            if self.timer.isActive():
-                self.timer.stop()
+            if self.timer is not None:
+                if self.timer.isActive():
+                    self.timer.stop()
 
             from view.main.mainframe import MainWindow
             inst = MainWindow.get_instance()

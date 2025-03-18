@@ -86,7 +86,7 @@ class Pump(Device):
         self.pump.lookup_by_name("neMESYS_Starter_1_Pump")
                 
         self._set_units()
-        self._syringeconfig(7.976, 50.0)
+        self._syringeconfig(1.456, 60.0)
                 
         self.max_volume = self.pump.get_volume_max()
         self.max_flowrate = self.pump.get_flow_rate_max()

@@ -1,5 +1,5 @@
 
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QComboBox
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QComboBox, QTabWidget
 
 from model.measurements.routine_system.routine_system import RoutineSystem, RoutineData
 
@@ -23,15 +23,27 @@ class AlgorithmItemWidget(QWidget):
         
         mainlayout = QHBoxLayout()
         
-        name = QLabel("Algorithm")
+        maintabwidget = QTabWidget()
         
+        # Page one
+        algorithmwidget = QWidget()
+        algorithmlayout = QVBoxLayout()
+
+        # Information label
+        information = QLabel("Please ensure the adequate Camera Are of Interest ist selected for proper results.")
+
         # Algorithm Picker
         self.algorithms = QComboBox()
         self.algorithms.addItems(["Bubble Size", "Mixing Time"])
         self.algorithms.currentTextChanged.connect(self.add_setting)
         
-        mainlayout.addWidget(name)
-        mainlayout.addWidget(self.algorithms)
+        algorithmlayout.addWidget(information)
+        algorithmlayout.addWidget(self.algorithms)
+        algorithmwidget.setLayout(algorithmlayout)
+        
+        maintabwidget.addTab(algorithmwidget, "Algorithm")
+        
+        mainlayout.addWidget(maintabwidget)
         
         self.setLayout(mainlayout)
         

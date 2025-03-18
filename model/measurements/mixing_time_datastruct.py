@@ -15,9 +15,12 @@ class DataMixingTime:
     
     def add_global_results(self, image_index: int, entropy: float, variance: float) -> None:
         
-        if image_index not in self.global_mixing_data:
-            self.global_mixing_data[image_index] = {}
+        if "entropy" not in self.global_mixing_data:
+            self.global_mixing_data["entropy"] = {}
             
+        if "variance" not in self.global_mixing_data:
+            self.global_mixing_data["variance"] = {}
+        
         self.global_mixing_data["entropy"][image_index] = entropy
         self.global_mixing_data["variance"][image_index] = variance
     

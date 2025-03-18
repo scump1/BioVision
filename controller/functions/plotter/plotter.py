@@ -6,11 +6,17 @@ from matplotlib.figure import Figure
 class Plotter:
 
     def __init__(self) -> None:
+        
+        self.figure = None
+        self.canvas = None
+        self.ax = None
+
+    def plot(self, x: list, y: dict, xlabel=None, ylabel=None, title=None, **plot_kwargs) -> QWidget:
+        
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.ax = self.figure.add_subplot(111)
-
-    def plot(self, x: list, y: dict, xlabel=None, ylabel=None, title=None, **plot_kwargs) -> QWidget:
+        
         self.ax.clear()  # Clear previous plots
 
         # Plot the first y-axis

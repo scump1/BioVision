@@ -63,6 +63,10 @@ class MixingTimeRunner(threading.Thread):
             self.progess_logger.progress_space('mixing_time', 1)
             time.sleep(1)
         
+        
+        self.progess_logger.set_space_value('mixing_time', 100)
+        time.sleep(1)
+        
         self.cleanup()
         
         self.algman.add_task(self.algman.States.MIXING_TIMER_STATE, 0)
@@ -93,6 +97,10 @@ class MixingTimeRunner(threading.Thread):
         self.progess_logger.add_scorespace('mixing_time', self.runtime)
         
     def cleanup(self):
+        
+        # Resetting all the events
+        self.camera.mt_await_capture_start_event.clear()
+        self.pump.await_mt_injection_event.clear()
         
         self.progess_logger.del_scorespace('mixing_time', True)
 

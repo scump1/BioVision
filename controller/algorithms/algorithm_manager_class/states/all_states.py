@@ -36,29 +36,35 @@ class MixingTimerState(State):
         mta = MixingTimer(emtpy_calibration_path, filled_calibration_path, local_mixing_time)
         
         futures = []
+        results = []
+        
         x_old, y_old = 0, 0
         
         with ProcessPoolExecutor() as executor:
             
             for file in images:
                 futures.append( executor.submit(mta.process_image, file) )
+            
+            for future in futures:
+                result = future.result()
+                results.append(result)
+             
+        for i, result in enumerate(results):
+            
+            if not local_mixing_time:
+                g_variance, g_entropy = result
+                mixing_data.add_global_results(i, g_entropy, g_variance)
+            
+            else:
+                g_variance, g_entropy, tile_size, tilenumbers, tile_data = result
                 
-            for i, result in enumerate(futures):
-    
-                if not local_mixing_time:
-                    g_variance, g_entropy = result
-                    mixing_data.add_global_results(i, g_entropy, g_variance)
-                
-                else:
-                    g_variance, g_entropy, tile_size, tilenumbers, tile_data = result
-                    
-                    mixing_data.add_global_results(i, g_entropy, g_variance)
-                    mixing_data.add_tile(i, tile_data)
+                mixing_data.add_global_results(i, g_entropy, g_variance)
+                mixing_data.add_tile(i, tile_data)
 
-                    x, y = tilenumbers
-                    if x > x_old or y > y_old:
-                        x_old, y_old = x, y
-                        mixing_data.add_local_metadata(tile_size, x, y)
+                x, y = tilenumbers
+                if x > x_old or y > y_old:
+                    x_old, y_old = x, y
+                    mixing_data.add_local_metadata(tile_size, x, y)
 
         self.data.add_data(self.data.Keys.MIXING_TIME_RESULT_STRUCT, mixing_data, self.data.Namespaces.MIXING_TIME)
         
