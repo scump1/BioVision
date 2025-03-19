@@ -402,6 +402,7 @@ class UIMixingTime(QWidget):
         
         # we start the runner here and start a timer to check the progress logger
         self.progress_signal.emit(0, "Starting mixing routine...")
+        self.start_mixing_button.setEnabled(False)
         
         handle = str(uuid4())
         self.mixingtime_handler.start_mixing_time(handle, self.massflow_value.value(), self.volume_value.value())
