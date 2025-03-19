@@ -1,61 +1,16 @@
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
+
 from operator_mod.logger.global_logger import Logger
 from controller.device_handler.devices.mfc_device.mfc import MFC
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 
 from model.data.configuration_manager import ConfigurationManager
 
-class MFCWorker(QThread):
-    
-    progress_update = Signal(int, str)  # Signal to update progress bar and label
-    finished = Signal(bool)             # Signal to indicate completion (success or failure)
-
-    def __init__(self, target_massflow, data, mfc, logger):
-        
-        super().__init__()
-        
-        self.target_massflow = target_massflow
-        self.data = data
-        self.mfc = mfc
-        self.logger = logger
-
-    def run(self):
-        try:
-            # Update progress to "sending settings"
-            self.progress_update.emit(15, "Sending settings to MFC...")
-            self.data.add_data(self.data.Keys.MFC_SETTINGS, self.target_massflow, namespace=self.data.Namespaces.MFC)
-            self.mfc.add_task(self.mfc.States.SETTING_SETTER_STATE, 0)
-
-            # Update progress to "applying settings"
-            self.progress_update.emit(45, "Applying MFC settings...")
-
-            # Update progress to "checking settings"
-            self.progress_update.emit(75, "Checking MFC settings...")
-
-            timer = QElapsedTimer()
-            timer.start()
-            
-            while timer.elapsed() < 2000:
-                pass
-            
-            del timer
-
-            success = self.data.get_data(self.data.Keys.CAMERA_DEVICE_SETTINGS_SUCCESS, self.data.Namespaces.CAMERA)
-
-            if success:
-                self.progress_update.emit(100, "Set settings successfully.")
-                self.finished.emit(True)
-            else:
-                self.progress_update.emit(100, "Set settings unsuccessful.")
-                self.finished.emit(False)
-
-        except Exception as e:
-            self.logger.warning(f"Could not set Settings to MFC: {e}")
-            self.finished.emit(False)
-
 class UIMFCWidget(QWidget):
+    
+    massflow_set = Signal()
     
     def __init__(self) -> None:
         
@@ -65,7 +20,11 @@ class UIMFCWidget(QWidget):
         self.mfc = MFC.get_instance()
         self.logger = Logger("Application").logger
         
+        self.data.add_data(self.data.Keys.MFC_DEVICE_UI_REFERENCE, self, self.data.Namespaces.PROJECT_MANAGEMENT)
+        
         self.configuration = ConfigurationManager.get_instance()
+        
+        self.massflow_set.connect(self.on_apply_finished)
         
         self.massflow = None
         
@@ -80,12 +39,41 @@ class UIMFCWidget(QWidget):
         
         mainlayout = QVBoxLayout()
         
+        # The current status
+        self.currentmassflow = QLabel(str(round(self.massflow))) if self.massflow else QLabel(str(0.0))
+        self.current_valve_status = QLabel('Open')
+        
+        mainlayout.addWidget(self.currentmassflow)
+        mainlayout.addWidget(self.current_valve_status)
+        
+        ### Tab Widget as background
+        maintabwidget = QTabWidget()
+        mainlayout.addWidget(maintabwidget)
+        
+        ## Layout for Opening / CLosing the Valve
+        open_close_widget = QWidget()
+        open_close_layout = QVBoxLayout()
+
+        description_label = QLabel('Open or Close the Valve of the MFC completely.')
+        open_close_button = QPushButton()
+        
+        open_close_layout.addWidget(description_label)
+        open_close_layout.addWidget(open_close_button)
+        
+        open_close_widget.setLayout(open_close_layout)
+        
+        maintabwidget.addTab(open_close_widget, 'Open / Close')
+        
+        ## New Massflow Setter
+        massflow_set_Widget = QWidget()
+        massflow_set_layout = QVBoxLayout()
+        
+        massflow_set_Widget.setLayout(massflow_set_layout)
+        
         self.formlayout = QFormLayout()
         
-        # Current Massflow
-        self.currentmassflow = QLabel(str(round(self.massflow))) if self.massflow else QLabel(str(0.0))
-        self.formlayout.addRow("Current Massflow:", self.currentmassflow)
-
+        massflow_set_layout.addLayout(self.formlayout)
+        
         # New Massflow
         self.massflow_box = QDoubleSpinBox()
         self.massflow_box.setRange(0.0, 50.0)
@@ -93,9 +81,7 @@ class UIMFCWidget(QWidget):
         self.massflow_box.setValue(5.0)
         
         self.formlayout.addRow("Target Massflow:", self.massflow_box)
-        
-        mainlayout.addLayout(self.formlayout)
-        
+                
         # Apply button and progress bar
         self.applybutton = QPushButton("Apply")
         self.applybutton.pressed.connect(self.apply_settings)
@@ -103,14 +89,14 @@ class UIMFCWidget(QWidget):
         self.progressbar = QProgressBar()
         self.progressbar.setRange(0, 100)
         self.progressbar.setValue(0)
-        self.progressbar.setVisible(False)
         
         self.progress_label = QLabel()
-        self.progress_label.setVisible(False)
 
-        mainlayout.addWidget(self.applybutton)
-        mainlayout.addWidget(self.progressbar)
-        mainlayout.addWidget(self.progress_label)
+        massflow_set_layout.addWidget(self.applybutton)
+        massflow_set_layout.addWidget(self.progressbar)
+        massflow_set_layout.addWidget(self.progress_label)
+        
+        maintabwidget.addTab(massflow_set_Widget, 'Massflow Control')
         
         self.setLayout(mainlayout)
         
@@ -120,20 +106,15 @@ class UIMFCWidget(QWidget):
         
         # Disable UI and prepare progress bar
         self.formlayout.setEnabled(False)
-        self.progressbar.setVisible(True)
-        self.progress_label.setVisible(True)
+        
+        self.update_progress(20, 'Applying settings...')
         
         # Changing the config
         self.configuration.change_configuration(self.configuration.Devices.MFC, self.configuration.MFCSettings.MASSFLOW, self.massflow_box.value())
         
         # Start worker thread
-        self.worker = MFCWorker(self.massflow_box.value(), self.data, self.mfc, self.logger)
-        
-        # Connect worker signals to update GUI
-        self.worker.progress_update.connect(self.update_progress)
-        self.worker.finished.connect(self.on_apply_finished)
-        
-        self.worker.start()  # Run the worker in a separate thread
+        self.data.add_data(self.data.Keys.MFC_SETTINGS, self.massflow_box.value(), self.data.Namespaces.MFC)
+        self.mfc.add_task(self.mfc.States.SETTING_SETTER_STATE, 0)
 
     def update_progress(self, value, text):
         """Update progress bar and label text."""
@@ -141,22 +122,22 @@ class UIMFCWidget(QWidget):
         self.progress_label.setText(text)
 
 
-    def on_apply_finished(self, success):
+    def on_apply_finished(self):
         """Handle completion of apply settings."""
-        if not success:
-            self.progress_label.setStyleSheet("color: red;")
-            self.progress_label.setText("Set settings unsuccessful.")
         
+        success = self.data.get_data(self.data.Keys.MFC_SETTINGS_SUCCESS, self.data.Namespaces.MFC)
+        
+        if success:
+            self.update_progress(100, 'Successful.')
         else:
-            self.progress_label.setText("Set settings successfully.")
+            self.progress_label.setStyleSheet('color: red;')
+            self.update_progress(100, 'Unsuccessful.')
     
         QTimer.singleShot(2000, self.reset_ui)
     
     def reset_ui(self):
         # Reset UI elements
         self.formlayout.setEnabled(True)
-        self.progressbar.setVisible(False)
-        self.progress_label.setVisible(False)
         self.progressbar.setValue(0)
         self.progress_label.setText('')
         self.progress_label.setStyleSheet('color: white;')
@@ -182,8 +163,10 @@ class UIMFCWidget(QWidget):
     
     def closeEvent(self, event: QCloseEvent):
         try:
-            if self.polltimer.isActive():
-                self.polltimer.stop()
+            
+            if self.polltimer is not None:
+                if self.polltimer.isActive():
+                    self.polltimer.stop()
                 
             from view.main.mainframe import MainWindow
             inst = MainWindow.get_instance()

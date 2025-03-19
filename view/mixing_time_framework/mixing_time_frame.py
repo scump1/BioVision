@@ -10,8 +10,12 @@ from PySide6.QtCore import *
 from operator_mod.measurements.mixing_time_handler import MixingTimeHandler
 from model.measurements.mixing_time_datastruct import DataMixingTime
 
+from view.databasefileForm.database_form import DataBaseForm
+
 from controller.functions.plotter.plotter import Plotter
 from controller.device_handler.devices.pump_device.pump import Pump
+
+from model.utils.SQL.sql_manager import SQLManager
 
 from operator_mod.logger.global_logger import Logger
 from operator_mod.logger.progress_logger import ProgressLogger
@@ -27,6 +31,7 @@ class UIMixingTime(QWidget):
         super().__init__()
         
         self.data = InMemoryData()
+        self.sql = SQLManager()
         self.logger = Logger("Application").logger
         
         self.pump = Pump.get_instance()
@@ -202,6 +207,12 @@ class UIMixingTime(QWidget):
         self.result_plots_widget = QTabWidget()
         resultlayout.addWidget(self.result_plots_widget)
         
+        # Close Button
+        self.close_button = QPushButton('Close')
+        self.close_button.clicked.connect(self._close_window_button_action)
+        
+        resultlayout.addWidget(self.close_button)
+        
         resultwidget.setLayout(resultlayout)
         
         return resultwidget
@@ -230,14 +241,14 @@ class UIMixingTime(QWidget):
         plotter = Plotter()
         
         plotted_entropy_widget = plotter.plot(
-            x_time_values, {"Entropy": entropy_value_list},
+            x_time_values, {"Entropy": entropy_normed},
             xlabel="Frame [-]",
             ylabel="Entropy [-]",
             title="Entropy over frames"
         )
         
         plotted_variance_widget = plotter.plot(
-            x_time_values, {"Variance": variance_value_list},
+            x_time_values, {"Variance": variance_normed},
             xlabel="Frame [-]",
             ylabel="Variance [-]",
             title="Variance over frames"
@@ -251,6 +262,42 @@ class UIMixingTime(QWidget):
         self.result_plots_widget.addTab(plotted_variance_widget, "Variance")
         
         self.stacked_layout.setCurrentIndex(4)
+        
+        databse_path = self._write_results(x_time_values, entropy_normed, variance_normed)
+    
+        # Using the Databaseform as a widget here!
+        data_widget = DataBaseForm(databse_path, str(uuid4()))
+        self.result_plots_widget.addTab(data_widget, 'Result Data')
+    
+    def _write_results(self, frames: list, entropy: list, variance: list) -> str:
+        """Writing the mixing time data into the sql statement file for data.
+
+        Args:
+            frames (list): just numbers
+            entropy (list): normalized [0,1] entropy values
+            variance (list): normalized [0,1] variance values
+        """
+        
+        if len(entropy) != len(variance):
+            self.logger.error("Entropy and Variance arrays are not same length.")
+            return
+        
+        ### Calculating some extras here later
+        print(entropy, variance)
+        
+        dirpath = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_DATA, self.data.Namespaces.MIXING_TIME)
+        filepath = os.path.join(dirpath, 'results.db')
+        
+        table, query = self.sql.generate_sql_statements('GlobalMixingTimeRawData', {
+            'Frame' : frames,
+            'Entropy' : entropy,
+            'Variance' : variance
+        })
+        
+        self.sql.read_or_write(filepath, table, "write")
+        self.sql.read_or_write(filepath, query, "write")
+        
+        return filepath
     
     def _empty_checbutton_action(self, state: bool):
         self.empty_reactor_fulfilled.setEnabled(state)
@@ -426,6 +473,10 @@ class UIMixingTime(QWidget):
         self._empty_checbutton_action(False)
         self._filled_checbutton_action(False)
     
+    def _close_window_button_action(self) -> None:
+        
+        self.closeEvent(QCloseEvent())
+    
     def closeEvent(self, event):
         
         try:
@@ -446,4 +497,5 @@ class UIMixingTime(QWidget):
         
         finally:
             event.accept()
+            
         

@@ -68,6 +68,10 @@ class EventManager():
         MS_STOPPED_FOR_WAITING = "MEasurementStoppedForWaiting"
         MS_ENDED = "MSEnded"
         
+        # Config Setter
+        CONFIGURATION_SETTER_PUMP = "ConfigurationSetterPump"
+        CONFIGURATION_SETTER_MFC = "ConfigurationSetterMFC"
+        
     def __new__(cls, *args, **kwargs):
         
         with cls._lock:

@@ -9,6 +9,8 @@ import time
 import threading
 from enum import Enum
 
+from model.data.configuration_manager import ConfigurationManager
+
 from operator_mod.logger.global_logger import Logger
 from operator_mod.eventbus.event_handler import EventManager
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
@@ -49,7 +51,11 @@ class Pump(Device):
         super().__init__()
         
         self.logger = Logger("Pump").logger
+        
         self.events = EventManager()
+        self.events.add_listener(self.events.EventKeys.CONFIGURATION_SETTER_PUMP, self._syringeconfig, 0)
+        
+        self.config_manager = ConfigurationManager.get_instance()
         self.data = InMemoryData()
         
         self.pump = None
@@ -86,7 +92,7 @@ class Pump(Device):
         self.pump.lookup_by_name("neMESYS_Starter_1_Pump")
                 
         self._set_units()
-        self._syringeconfig(1.456, 60.0)
+        self._syringeconfig()
                 
         self.max_volume = self.pump.get_volume_max()
         self.max_flowrate = self.pump.get_flow_rate_max()
@@ -165,24 +171,29 @@ class Pump(Device):
         max_ul_s = self.pump.get_flow_rate_max()
         self.logger.info(f"Max. flow ul/s: {max_ul_s}.")
     
-    def _syringeconfig(self, init_diameter : float = None, init_length : float = None):
+    def _syringeconfig(self):
         """
         Sets the intended syringe configuration to the pump.
         """
-        
-        if init_diameter is not None and init_length is not None:
-            inner_diameter_set = init_diameter
-            piston_stroke_set = init_length
-            self.pump.set_syringe_param(inner_diameter_set, piston_stroke_set)
+        try:
+            setting = self.config_manager.get_configuration(self.config_manager.Devices.PUMP)
             
-        diameter, stroke = self.pump.get_syringe_param()
-        
-        self._syringe_params = [diameter, stroke]
-        
-        self.max_volume = self.pump.get_volume_max()
-        self.max_flowrate = self.pump.get_flow_rate_max()
-        
-        self.logger.info("Setup of syringe successful.")
+            init_diameter = setting[self.config_manager.PumpSettings.SYRINGE_DIAMETER] if self.config_manager.PumpSettings.SYRINGE_DIAMETER in setting else 7.97
+            init_length = setting[self.config_manager.PumpSettings.SYRINGE_LENGTH]if self.config_manager.PumpSettings.SYRINGE_LENGTH in setting else 50.0
+            
+            if init_diameter is not None and init_length is not None:
+                self.pump.set_syringe_param(float(init_diameter), float(init_length))
+                
+            diameter, stroke = self.pump.get_syringe_param()
+            
+            self._syringe_params = [diameter, stroke]
+            
+            self.max_volume = self.pump.get_volume_max()
+            self.max_flowrate = self.pump.get_flow_rate_max()
+            
+            self.logger.info("Setup of syringe successful.")
+        except Exception as e:
+            self.logger.warning(f"Error in syringe config setting: {e}.")
   
     ### Internal waiting and checkups
     def _wait_calibration_finished(self, timeout : int = 30):

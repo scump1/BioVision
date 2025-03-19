@@ -3,6 +3,8 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 
+from model.data.configuration_manager import ConfigurationManager
+
 from operator_mod.logger.global_logger import Logger
 from controller.device_handler.devices.pump_device.pump import Pump
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
@@ -15,6 +17,8 @@ class UIPumpWidget(QWidget):
         
         self.data = InMemoryData()
         self.pump = Pump.get_instance()
+        self.configuration_manager = ConfigurationManager.get_instance()
+        
         self.logger = Logger("Application").logger
     
     def setupForm(self):
@@ -201,13 +205,20 @@ class UIPumpWidget(QWidget):
 
     def _syringe_params_changed(self):
         
-        diameter = float(self.syringe_diameter_spinbox.value())
-        length = float(self.syringe_length_spinbox.value())
-        
-        self.data.add_data(self.data.Keys.SYRINGE_DIAMETER, diameter, self.data.Namespaces.PUMP)
-        self.data.add_data(self.data.Keys.SYRINGE_LENGTH, length, self.data.Namespaces.PUMP)
-        
-        self.pump.add_task(self.pump.States.SYRINGE_SETTER, 0)
+        try:
+            diameter = float(self.syringe_diameter_spinbox.value())
+            length = float(self.syringe_length_spinbox.value())
+            
+            self.data.add_data(self.data.Keys.SYRINGE_DIAMETER, diameter, self.data.Namespaces.PUMP)
+            self.data.add_data(self.data.Keys.SYRINGE_LENGTH, length, self.data.Namespaces.PUMP)
+            
+            self.pump.add_task(self.pump.States.SYRINGE_SETTER, 0)
+            
+            self.configuration_manager.change_configuration(self.configuration_manager.Devices.PUMP, self.configuration_manager.PumpSettings.SYRINGE_DIAMETER, diameter)
+            self.configuration_manager.change_configuration(self.configuration_manager.Devices.PUMP, self.configuration_manager.PumpSettings.SYRINGE_LENGTH, length)
+            
+        except Exception as e:
+            self.logger.warning(f'Exception in pump syringe setter: {e}.')
     
     def _set_inital_syringe_params(self):
         

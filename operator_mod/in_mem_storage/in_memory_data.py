@@ -141,6 +141,8 @@ class InMemoryData:
         
         MEASUREMENT_REGISTRY_SQL = "MeasurementRegistrySQL"
         
+        MFC_DEVICE_UI_REFERENCE = "MFCDeviceUIReference"
+        
         # Device Settings
         TEMPERATURE_SETTING = "TemperatureSetting"
         CAMERA_SETTINGS = "CameraSettings"

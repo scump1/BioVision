@@ -50,6 +50,10 @@ class SettingsSetter(State):
 
             self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, True, self.data.Namespaces.MFC)
             
+            reference = self.data.get_data(self.data.Keys.MFC_DEVICE_UI_REFERENCE, self.data.Namespaces.PROJECT_MANAGEMENT)
+            reference.massflow_set.emit()
+            
+            
         except Exception as e:
             self.logger.error(f"Error in writing to Instrument: {e}")
             

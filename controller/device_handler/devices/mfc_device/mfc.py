@@ -1,5 +1,4 @@
 
-from sre_parse import State
 import propar
 import threading
 from enum import Enum
@@ -9,6 +8,8 @@ from controller.device_handler.devices.state_machine_template import Device
 
 from operator_mod.logger.global_logger import Logger
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
+from operator_mod.eventbus.event_handler import EventManager
+
 from model.data.configuration_manager import ConfigurationManager
 
 class MFC(Device):
@@ -48,6 +49,9 @@ class MFC(Device):
         self.logger = Logger("MFC").logger
         self.data = InMemoryData()
         
+        self.events = EventManager.get_instance()
+        self.events.add_listener(self.events.EventKeys.CONFIGURATION_SETTER_MFC, self._apply_config, 0)
+        
         self.mfc_instrument = None
         
         self._connect()
@@ -78,6 +82,15 @@ class MFC(Device):
         except Exception as e:
             self.data.add_data(self.data.Keys.MFC, False, namespace=self.data.Namespaces.DEVICES)
             self.logger.warning(f"Could not connect: {e}")
+    
+    def _apply_config(self):
+        
+        config = self.configurations.get_configuration(self.configurations.Devices.MFC)
+        
+        massflow = config[self.configurations.MFCSettings.MASSFLOW]
+        self.data.add_data(self.data.Keys.MFC_SETTINGS, float(massflow), self.data.Namespaces.MFC)
+        
+        self.add_task(self.States.SETTING_SETTER_STATE, 0)
     
     @classmethod
     def get_instance(cls):

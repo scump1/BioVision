@@ -4,6 +4,8 @@ import os
 import threading
 
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
+from operator_mod.eventbus.event_handler import EventManager
+
 from model.utils.file_access.file_access_manager import FileAccessManager
 from model.utils.JSON.json_manager import JSONManager
 from operator_mod.logger.global_logger import Logger
@@ -15,10 +17,11 @@ class ConfigurationManager:
     
     _instance = None
     _lock = threading.Lock()
-    
+        
     class Devices(Enum):
         CAMERA = "Camera"
         MFC = "MFC"
+        PUMP = "PUMP"
         
     class CameraSettings(Enum):
         AUTOWHITE = 1
@@ -29,10 +32,14 @@ class ConfigurationManager:
     class MFCSettings(Enum):
         MASSFLOW = 1
     
+    class PumpSettings(Enum):
+        SYRINGE_DIAMETER = 1
+        SYRINGE_LENGTH = 2
+    
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(ConfigurationManager, cls).__new__(cls)
-            cls._instance.configurations = {ConfigurationManager.Devices.CAMERA: None , ConfigurationManager.Devices.MFC: None}
+            cls._instance.configurations = {ConfigurationManager.Devices.CAMERA: None , ConfigurationManager.Devices.MFC: None, ConfigurationManager.Devices.PUMP: None}
         return cls._instance
     
     def __init__(self):
@@ -42,6 +49,8 @@ class ConfigurationManager:
         self.json = JSONManager()
         self.logger = Logger("Application").logger
         self.fam = FileAccessManager()
+        
+        self.events = EventManager.get_instance()
         
         # Settings
         # This is a list in form : autowhite_balance, exposuretime, gain, saturation = settings
@@ -55,6 +64,9 @@ class ConfigurationManager:
         # MFC Standard : massflow = settings
         self.mfc_standard = {ConfigurationManager.MFCSettings.MASSFLOW: 10}
         
+        self.pump_standard = {
+            ConfigurationManager.PumpSettings.SYRINGE_DIAMETER: 7.976,
+            ConfigurationManager.PumpSettings.SYRINGE_LENGTH: 50}
         
         self._create_standard_settings()
         
@@ -66,6 +78,9 @@ class ConfigurationManager:
             
         if self.configurations[ConfigurationManager.Devices.MFC] is None:
             self.configurations[ConfigurationManager.Devices.MFC] = self.mfc_standard
+    
+        if self.configurations[ConfigurationManager.Devices.PUMP] is None:
+            self.configurations[ConfigurationManager.Devices.PUMP] = self.pump_standard
     
     def get_configuration(self, device: Devices) -> dict:
         """Return the configuration dictionary for a device.
@@ -106,21 +121,19 @@ class ConfigurationManager:
                 self.logger.warning(f"Device {device} not in Configurations.")
                 
     def _save_configuration(self) -> None:
-         
         """Saves the current configuration to a JSON file."""
+        
         path = self.data.get_data(self.data.Keys.PROJECT_FOLDER_USERDATA, self.data.Namespaces.PROJECT_MANAGEMENT)
         
         try:
-            if os.path.exists(path):
-                # Serialize Enum keys for JSON storage
-                serializable_config = {
-                    device.value: {setting.name: value for setting, value in config.items()}
-                    for device, config in self.configurations.items()
-                }
-                self.json.write_json(serializable_config, path, "device_configuration")
-                self.logger.info(f"Configuration saved to {path}.")
-            else:
-                self.logger.error(f"Invalid path: {path}")
+            # Serialize Enum keys for JSON storage
+            serializable_config = {
+                device.value: {setting.name: value for setting, value in config.items()}
+                for device, config in self.configurations.items()
+            }
+            self.json.write_json(serializable_config, path, "device_configuration")
+            self.logger.info(f"Configuration saved to {path}.")
+            
         except Exception as e:
             self.logger.error(f"Failed to save configuration: {e}")
             
@@ -147,12 +160,19 @@ class ConfigurationManager:
                     }
                     
                     self.configurations.update(loaded_config)
+                    self._apply_condigurations()
+                    
                     self.logger.info("Configuration loaded successfully.")
                 else:
                     self.logger.error(f"Invalid path: {filepath}")
             except Exception as e:
                 self.logger.error(f"Failed to load configuration: {e}")
-            
+    
+    def _apply_condigurations(self):
+    
+        self.events.trigger_event(self.events.EventKeys.CONFIGURATION_SETTER_PUMP)
+        self.events.trigger_event(self.events.EventKeys.CONFIGURATION_SETTER_MFC)
+    
     @classmethod
     def get_instance(cls):
         if cls._instance is None:

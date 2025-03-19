@@ -1,6 +1,10 @@
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvasQTAgg as FigureCanvas,
+    NavigationToolbar2QT as NavigationToolBar)
+
 from matplotlib.figure import Figure
 
 class Plotter:
@@ -15,6 +19,7 @@ class Plotter:
         
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolBar(self.canvas, None)
         self.ax = self.figure.add_subplot(111)
         
         self.ax.clear()  # Clear previous plots
@@ -55,6 +60,7 @@ class Plotter:
 
         widget = QWidget()
         layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
         widget.setLayout(layout)
         
