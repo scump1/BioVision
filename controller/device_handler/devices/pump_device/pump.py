@@ -171,18 +171,26 @@ class Pump(Device):
         max_ul_s = self.pump.get_flow_rate_max()
         self.logger.info(f"Max. flow ul/s: {max_ul_s}.")
     
-    def _syringeconfig(self):
+    def _syringeconfig(self, diameter : float = None, length : float = None):
         """
-        Sets the intended syringe configuration to the pump.
+        Sets the syringe parameters to the pump device or loads a configuration if none are given.
+        
+        Args:
+            diameter (float): A new syringe diameter in mm
+            length (float): A new sringe diameter in mm (typically 50 or 60)
         """
         try:
-            setting = self.config_manager.get_configuration(self.config_manager.Devices.PUMP)
-            
-            init_diameter = setting[self.config_manager.PumpSettings.SYRINGE_DIAMETER] if self.config_manager.PumpSettings.SYRINGE_DIAMETER in setting else 7.97
-            init_length = setting[self.config_manager.PumpSettings.SYRINGE_LENGTH]if self.config_manager.PumpSettings.SYRINGE_LENGTH in setting else 50.0
-            
-            if init_diameter is not None and init_length is not None:
-                self.pump.set_syringe_param(float(init_diameter), float(init_length))
+            if diameter is None and length is None:
+
+                setting = self.config_manager.get_configuration(self.config_manager.Devices.PUMP)
+                
+                init_diameter = setting[self.config_manager.PumpSettings.SYRINGE_DIAMETER] if self.config_manager.PumpSettings.SYRINGE_DIAMETER in setting else 7.97
+                init_length = setting[self.config_manager.PumpSettings.SYRINGE_LENGTH]if self.config_manager.PumpSettings.SYRINGE_LENGTH in setting else 50.0
+                
+                if init_diameter is not None and init_length is not None:
+                    self.pump.set_syringe_param(float(init_diameter), float(init_length))
+            else:
+                self.pump.set_syringe_param(diameter, length)
                 
             diameter, stroke = self.pump.get_syringe_param()
             

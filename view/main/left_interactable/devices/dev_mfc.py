@@ -40,12 +40,24 @@ class UIMFCWidget(QWidget):
         
         mainlayout = QVBoxLayout()
         
+        # Status Layout
+        status_layout = QGridLayout()
+        
         # The current status
+        
+        massflow_label = QLabel('Current Massflow: ')
+        valve_status_label = QLabel('Valve Status')
+        
         self.currentmassflow = QLabel(str(round(self.massflow))) if self.massflow else QLabel(str(0.0))
         self.current_valve_status = QLabel('Open')
         
-        mainlayout.addWidget(self.currentmassflow)
-        mainlayout.addWidget(self.current_valve_status)
+        status_layout.addWidget(massflow_label, 0, 0, Qt.AlignmentFlag.AlignLeft)
+        status_layout.addWidget(self.currentmassflow, 0, 1, Qt.AlignmentFlag.AlignLeft)
+        
+        status_layout.addWidget(valve_status_label, 1, 0, Qt.AlignmentFlag.AlignLeft)
+        status_layout.addWidget(self.current_valve_status, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        
+        mainlayout.addLayout(status_layout)
         
         ### Tab Widget as background
         maintabwidget = QTabWidget()
@@ -174,6 +186,7 @@ class UIMFCWidget(QWidget):
             self.valve_status = False
             
             self.open_close_button.setText('Reopen')
+            self.current_valve_status.setText('Closed')
             
 
         elif self.valve_status == False:
@@ -181,6 +194,8 @@ class UIMFCWidget(QWidget):
             self.valve_status = True
             
             self.open_close_button.setText('Close')
+            self.current_valve_status.setText('Opened')
+
     
     def closeEvent(self, event: QCloseEvent):
         try:
@@ -196,6 +211,8 @@ class UIMFCWidget(QWidget):
             for subwindow in subwindows:
                 if isinstance(subwindow.widget(), UIMFCWidget):
                     inst.middle_layout.mdi_area.removeSubWindow(subwindow)
+
+            self.data.delete_data(self.data.Keys.MFC_DEVICE_UI_REFERENCE, self.data.Namespaces.PROJECT_MANAGEMENT)
 
         except Exception as e:
             self.logger.warning(f"Unclean subwindow exit in UI MFCWidget: {e}")

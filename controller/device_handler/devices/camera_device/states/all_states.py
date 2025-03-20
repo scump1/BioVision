@@ -26,7 +26,7 @@ class MTEmptyCalibrationState(State):
             if not dir_path:
                 return
             
-            numpy_image = self.device.get_image
+            numpy_image = self.device.get_latest_image
             
             filename = f"EmptyCalibration.bmp"
             filepath = os.path.join(dir_path, filename)
@@ -37,9 +37,6 @@ class MTEmptyCalibrationState(State):
                 
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")
-            
-        finally:
-            self.device.cam.stream_off()
 
 class MTFilledCalibrationState(State):
     
@@ -55,7 +52,7 @@ class MTFilledCalibrationState(State):
             if not dir_path:
                 return
            
-            numpy_image = self.device.get_image
+            numpy_image = self.device.get_latest_image
             
             filename = f"FilledCalibration.bmp"
             filepath = os.path.join(dir_path, filename)
@@ -67,9 +64,6 @@ class MTFilledCalibrationState(State):
                 
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")
-            
-        finally:
-            self.device.cam.stream_off()
 
 class MTImagecaptureState(State):
     
@@ -107,11 +101,11 @@ class MTImagecaptureState(State):
         
     def single_img_capture(self, img_per_int: int, path: str):
         
-        self.logger.info("Trying to capture Image.")
-
         while img_per_int > 0:
             
-            numpy_image = self.device.get_image
+            start_time = time.time()
+            
+            numpy_image = self.device.get_latest_image
             
             filename = f"MT_Image_{self.overall_count}.bmp"
             filepath = os.path.join(path, filename)
@@ -120,7 +114,11 @@ class MTImagecaptureState(State):
 
             self.overall_count += 1
             img_per_int -= 1
-
+            
+            processingtime = time.time() - start_time
+            
+            time.sleep((1-0.1)/32 - processingtime)
+            
 class LiveViewState(State):
     
     def run_logic(self):
@@ -131,49 +129,7 @@ class LiveViewState(State):
         self.logger.info("Camera is in live mode.")
 
         while not self.terminated:
-            time.sleep(0.1)
-            
-class CalibrationImageState(State):
-    """DEPRECEATED DO NOT USE"""
-    def run_logic(self):
-        
-        calibpath = self.data.get_data(self.data.Keys.CURRENT_SLOT_FOLDER_CALIBRATION, namespace=self.data.Namespaces.MEASUREMENT)
-        self.single_img_capture(1, calibpath)
-        
-    def single_img_capture(self, img_per_int: int, path: str):
-        
-        try:
-            img_count = 0
-            formatted_time = datetime.datetime.now().strftime("%H_%M_%S")
-            
-            self.device.cam.stream_on()
-
-            while img_per_int > 0:
-                raw_img = self.device.cam.data_stream[0].get_image()
-                if raw_img is not None:
-                    rgb_image = raw_img.convert("RGB")
-                    numpy_image = rgb_image.get_numpy_array()
-                    numpy_image = numpy_image[600:2500, 1800:2175]
-                    
-                    filename = f"Image_{formatted_time}_{img_count}.bmp"
-                    filepath = os.path.join(path, filename)
-
-                    cv2.imwrite(filepath, numpy_image)
-                    
-                    # We want to only have one image in this space at all times
-                    self.data.add_data(self.data.Keys.CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MEASUREMENT)
-
-                else:
-                    self.logger.warning("Failed to capture image: No data received from capture stream.")
-                    
-                img_count += 1
-                img_per_int -= 1
-                    
-        except Exception as e:
-            self.logger.warning(f"Image capturing not working properly: {e}.")
-            
-        finally:
-            self.device.cam.stream_off()
+            time.sleep(1)
 
 class ImageCaptureState(State):
     
@@ -202,6 +158,7 @@ class ImageCaptureState(State):
             self.device.await_capture_start_event.wait()
 
             # Scheduler setup
+            # We actually use two parallel running jobs with one second offset here
             self.scheduler = BackgroundScheduler()
 
             self.start_img_cap(img_per_int, interval)
@@ -262,8 +219,9 @@ class ImageCaptureState(State):
                 x1, x2, y1, y2 = self.device.area_of_interests.get(area_enum, None)
 
             while img_per_int > 0:
-            
-                numpy_image = self.device.get_image
+                
+                start_time = time.time()
+                numpy_image = self.device.get_latest_image
                 
                 if not area_enum == self.device.AreaOfInterest.ALL:
                     numpy_image = numpy_image[x1:x2, y1:y2]
@@ -278,8 +236,12 @@ class ImageCaptureState(State):
                 img_count += 1
                 img_per_int -= 1
                 
-                time.sleep(1/(img_count + img_per_int)) # Making sure we euqally space the image acqusition over a second
-
+                endtime = time.time()
+                processingtime = endtime - start_time
+                
+                # This means we wait for the given Framerate 32 minus the actual time it took for the image and some residue per frame to return to scheduler
+                time.sleep((1-0.1)/32 - processingtime) 
+                                
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, False, self.data.Namespaces.MEASUREMENT)
                 self.arduino.add_task(self.arduino.States.LIGHT_SWITCH_STATE, 0)
@@ -304,9 +266,9 @@ class HealthCheckState(State):
                 self.data.add_data(self.data.Keys.CAMERA, False, namespace=self.data.Namespaces.DEVICES)
                 return False      
             
-            raw_img = self.device.get_image # Accessing the image property from the image_acquisiton_thread
+            raw_img = self.device.get_latest_image # Accessing the image property from the image_acquisiton_thread
 
-            if not raw_img:
+            if raw_img is None:
                 self.data.add_data(self.data.Keys.CAMERA, False, namespace=self.data.Namespaces.DEVICES)
                 return False
             

@@ -15,7 +15,7 @@ class JSONManager:
         
         self.logger = Logger("Model").logger
     
-    def write_json(self, data: dict, target_dir_path: str, filename: str) -> None:
+    def write_json(self, data: dict, target_dir_path: str, filename: str, overwrite : bool = False) -> None:
         """
         Writes a given data dictionary to a JSON file in the target directory.
         
@@ -29,9 +29,10 @@ class JSONManager:
         # Ensure the directory exists
         os.makedirs(target_dir_path, exist_ok=True)
     
-        if os.path.exists(file_path):
-            self.add_to_json(data, file_path)
-            return
+        if not overwrite:
+            if os.path.exists(file_path):
+                self.add_to_json(data, file_path)
+                return
         
         # Write the JSON data to the file
         try:

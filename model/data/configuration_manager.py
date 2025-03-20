@@ -21,7 +21,7 @@ class ConfigurationManager:
     class Devices(Enum):
         CAMERA = "Camera"
         MFC = "MFC"
-        PUMP = "PUMP"
+        PUMP = "Pump"
         
     class CameraSettings(Enum):
         AUTOWHITE = 1
@@ -131,7 +131,7 @@ class ConfigurationManager:
                 device.value: {setting.name: value for setting, value in config.items()}
                 for device, config in self.configurations.items()
             }
-            self.json.write_json(serializable_config, path, "device_configuration")
+            self.json.write_json(serializable_config, path, "device_configuration", True)
             self.logger.info(f"Configuration saved to {path}.")
             
         except Exception as e:
@@ -149,16 +149,22 @@ class ConfigurationManager:
                   
                     config_data = dict(config_data[0])
                   
-                    # Deserialize Enum keys from JSON
-                    loaded_config = {
-                        ConfigurationManager.Devices(device): {
-                            getattr(ConfigurationManager.CameraSettings, setting) if hasattr(ConfigurationManager.CameraSettings, setting) 
-                            else getattr(ConfigurationManager.MFCSettings, setting): value
-                            for setting, value in settings.items()
-                        }
-                        for device, settings in config_data.items()
-                    }
+                    loaded_config = {}
                     
+                    for device, settings in config_data.items():
+                        loaded_config[ConfigurationManager.Devices(device)] = {}
+                    
+                        for setting, value in settings.items():
+                            
+                            if hasattr(ConfigurationManager.CameraSettings, setting):
+                                loaded_config[ConfigurationManager.Devices(device)][getattr(ConfigurationManager.CameraSettings, setting)] = value
+                    
+                            elif hasattr(ConfigurationManager.MFCSettings, setting):
+                                loaded_config[ConfigurationManager.Devices(device)][getattr(ConfigurationManager.MFCSettings, setting)] = value
+                                
+                            elif hasattr(ConfigurationManager.PumpSettings, setting):
+                                loaded_config[ConfigurationManager.Devices(device)][getattr(ConfigurationManager.PumpSettings, setting)] = value
+
                     self.configurations.update(loaded_config)
                     self._apply_condigurations()
                     

@@ -411,16 +411,15 @@ class MenuBar(QMenuBar):
                 QMessageBox.information(MainWindow.get_instance(), "Pump Settings", "There is already a Pump window open.")
                 return
         
-        self.ui_pump = UIPumpWidget()
-        self.ui_pump.setupForm()
+        ui_pump = UIPumpWidget()
+        ui_pump.setupForm()
 
         subwindow = QMdiSubWindow()
-        subwindow.setWidget(self.ui_pump)
+        subwindow.setWidget(ui_pump)
 
         main_inst.middle_layout.mdi_area.addSubWindow(subwindow)
 
         subwindow.show()
-        subwindow.resize(subwindow.size())
 
     def device_arduino_action(self):
         
@@ -441,11 +440,11 @@ class MenuBar(QMenuBar):
                 QMessageBox.information(MainWindow.get_instance(), "Arduino Settings", "There is already a Pump window open.")
                 return
         
-        self.ui_pump = UIArduinoWidget()
-        self.ui_pump.setupForm()
+        arduino_ui = UIArduinoWidget()
+        arduino_ui.setupForm()
 
         subwindow = QMdiSubWindow()
-        subwindow.setWidget(self.ui_pump)
+        subwindow.setWidget(arduino_ui)
 
         main_inst.middle_layout.mdi_area.addSubWindow(subwindow)
 
@@ -455,6 +454,7 @@ class MenuBar(QMenuBar):
     def mixing_time_action(self):
         
         from view.main.mainframe import MainWindow
+        from view.liveviewForm.liveview_form import LiveViewForm
         from view.mixing_time_framework.mixing_time_frame import UIMixingTime
 
         # First we check if the devices are even connected
@@ -467,19 +467,23 @@ class MenuBar(QMenuBar):
 
         subwindows = main_inst.middle_layout.mdi_area.subWindowList()
         for subwindow in subwindows:
+            
+            if isinstance(subwindow.widget(), LiveViewForm):
+                subwindow.close()
+            
             if isinstance(subwindow.widget(), UIMixingTime):
                 QMessageBox.information(MainWindow.get_instance(), "Mixing Time", "There is already a Mixing Time window open.")
                 return
         
-        self.ui_pump = UIMixingTime()
+        mixingtime_ui = UIMixingTime()
+        mixingtime_ui.setupForm()
 
         subwindow = QMdiSubWindow()
-        subwindow.setWidget(self.ui_pump)
-        self.ui_pump.setupForm()
+        subwindow.setWidget(mixingtime_ui)
+        subwindow.setWindowTitle("Mixing Time Measurement")
 
         main_inst.middle_layout.mdi_area.addSubWindow(subwindow)
 
-        subwindow.setWindowTitle("Mixing Time Measurement")
         subwindow.show()
 
     def closeEvent(self, event: QCloseEvent):

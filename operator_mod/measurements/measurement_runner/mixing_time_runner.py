@@ -51,8 +51,8 @@ class MixingTimeRunner(threading.Thread):
         self.camera.mt_await_capture_start_event.set()
         
         while not self.stop_event.is_set() and timer <= 2:
-            timer += 0.1
-            time.sleep(0.1)
+            timer += 1
+            time.sleep(1)
         
         self.progess_logger.progress_space('mixing_time', 2)
         self.pump.await_mt_injection_event.set()
@@ -62,7 +62,6 @@ class MixingTimeRunner(threading.Thread):
             timer += 1
             self.progess_logger.progress_space('mixing_time', 1)
             time.sleep(1)
-        
         
         self.progess_logger.set_space_value('mixing_time', 100)
         time.sleep(1)

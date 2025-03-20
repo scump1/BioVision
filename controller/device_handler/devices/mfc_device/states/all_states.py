@@ -51,7 +51,9 @@ class SettingsSetter(State):
             self.data.add_data(self.data.Keys.MFC_SETTINGS_SUCCESS, True, self.data.Namespaces.MFC)
             
             reference = self.data.get_data(self.data.Keys.MFC_DEVICE_UI_REFERENCE, self.data.Namespaces.PROJECT_MANAGEMENT)
-            reference.massflow_set.emit()
+            
+            if reference is not None:
+                reference.massflow_set.emit()
             
             
         except Exception as e:
@@ -97,11 +99,6 @@ class CloseValve(State):
     def run_logic(self):
         
         try:
-            read = self.device.mfc_instrument.readParameter(205) # to restore it later
-
-            if read is not None:
-                self.data.add_data(self.data.Keys.MFC_MASSFLOW, read, self.data.Namespaces.MFC)
-
             ## Actually closing
             self.device.mfc_instrument.writeParameter(206, 0.0)
 
@@ -114,12 +111,12 @@ class OpenValve(State):
         
         try:
             # Trying to get the latest read
-            read = self.data.get_data(self.data.Keys.MFC_MASSFLOW, self.data.Namespaces.MFC)
+            massflow = self.data.get_data(self.data.Keys.MFC_SETTINGS, self.data.Namespaces.MFC)
             
-            if read is not None:
-                self.device.mfc_instrument.writeParameter(206, read)
+            if massflow is not None:
+                self.device.mfc_instrument.writeParameter(206, float(massflow))
             else:
                 self.device.mfc_instrument.writeParameter(206, 5.0)
         
         except Exception as e:
-            self.logger.warning(f"Could not open valve with latest read: {read}, {e}.")
+            self.logger.warning(f"Could not open valve with latest read: {massflow}, {e}.")

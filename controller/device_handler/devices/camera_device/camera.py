@@ -1,12 +1,13 @@
 
 import threading
 import time
+import copy
 
 import gxipy as gx
 
 from enum import Enum
 
-from controller.device_handler.devices.camera_device.states.all_states import HealthCheckState, ImageCaptureState, LiveViewState, CalibrationImageState, SetSettingsState, MTEmptyCalibrationState, MTFilledCalibrationState, MTImagecaptureState
+from controller.device_handler.devices.camera_device.states.all_states import HealthCheckState, ImageCaptureState, LiveViewState, SetSettingsState, MTEmptyCalibrationState, MTFilledCalibrationState, MTImagecaptureState
 from operator_mod.in_mem_storage.in_memory_data import InMemoryData
 from model.data.configuration_manager import ConfigurationManager
 from operator_mod.logger.global_logger import Logger
@@ -34,7 +35,6 @@ class Camera(Device):
         States.HEALTH_CHECK_STATE: HealthCheckState,
         States.IMAGE_CAPTURE_STATE: ImageCaptureState,
         States.LIVE_VIEW_STATE: LiveViewState,
-        States.CALIBRATION_IMAGE_STATE: CalibrationImageState,
         States.CUSTOM_SETTINGS_SETTER: SetSettingsState,
         States.MT_EMPTY_CALIBRATION_STATE: MTEmptyCalibrationState,
         States.MT_FILLED_CALIBRATION_STATE: MTFilledCalibrationState,
@@ -86,9 +86,6 @@ class Camera(Device):
         self._connect()
         self.setupCamera()
 
-        # Start the image stream
-        self.cam.stream_on()
-        
         self.image_acqusition_running = True # Only sets to False in __del__
         
         self.image_acquisition_thread = threading.Thread(target=self.image_acqusition_thread_worker)
@@ -100,9 +97,6 @@ class Camera(Device):
         if self.image_acquisition_thread.is_alive():
             self.image_acqusition_running = False
             self.image_acquisition_thread.join()
-            
-        if self.cam:
-            self.cam.stream_off()
             
         self.shutdown()
 
@@ -164,9 +158,13 @@ class Camera(Device):
     
     ### Seperate image acquisiton thread to offload saving/writing image files from the image acqusition loop
     def image_acqusition_thread_worker(self):
+        
+        # Start the image stream
+        self.cam.stream_on()
 
         while self.image_acqusition_running:
             try:
+                
                 image = self.cam.data_stream[0].get_image()
                 
                 if image is not None:
@@ -174,18 +172,17 @@ class Camera(Device):
                     new_frame = image.get_numpy_array()
                     
                     with self._image_lock:
-                        # Using a two buffer approach to minimize race conditions
-                        self.latest_image = self.new_frame_image
-                    
-                    self.new_frame_image = new_frame
-                        
+                        self.latest_image = new_frame
+
             except:
                 self.logger.warning('Error in image acquisiton thread, image skipped.')
             finally:
                 time.sleep(1/32) # 32 Frames per second
     
+        self.cam.stream_off()
+
     @property
-    def get_image(self):
+    def get_latest_image(self):
         with self._image_lock:
             return self.latest_image
     

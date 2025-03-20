@@ -234,21 +234,21 @@ class UIMixingTime(QWidget):
             variance_value_list.append(data.global_mixing_data["variance"][img])
         
         # Using this later
-        entropy_normed = [float(i)/sum(entropy_value_list) for i in entropy_value_list]
-        variance_normed = [float(j)/sum(variance_value_list) for j in variance_value_list]
+        # entropy_normed = [float(i)/sum(entropy_value_list) for i in entropy_value_list]
+        # variance_normed = [float(j)/sum(variance_value_list) for j in variance_value_list]
         
         # We aquire the plotter here
         plotter = Plotter()
         
         plotted_entropy_widget = plotter.plot(
-            x_time_values, {"Entropy": entropy_normed},
+            x_time_values, {"Entropy": entropy_value_list},
             xlabel="Frame [-]",
             ylabel="Entropy [-]",
             title="Entropy over frames"
         )
         
         plotted_variance_widget = plotter.plot(
-            x_time_values, {"Variance": variance_normed},
+            x_time_values, {"Variance": variance_value_list},
             xlabel="Frame [-]",
             ylabel="Variance [-]",
             title="Variance over frames"
@@ -263,10 +263,13 @@ class UIMixingTime(QWidget):
         
         self.stacked_layout.setCurrentIndex(4)
         
-        databse_path = self._write_results(x_time_values, entropy_normed, variance_normed)
+        databse_path = self._write_results(x_time_values, entropy_value_list, variance_value_list)
     
         # Using the Databaseform as a widget here!
         data_widget = DataBaseForm(databse_path, str(uuid4()))
+        data_widget.setupForm()
+        data_widget.load_data()
+        
         self.result_plots_widget.addTab(data_widget, 'Result Data')
     
     def _write_results(self, frames: list, entropy: list, variance: list) -> str:
@@ -282,20 +285,25 @@ class UIMixingTime(QWidget):
             self.logger.error("Entropy and Variance arrays are not same length.")
             return
         
-        ### Calculating some extras here later
-        print(entropy, variance)
-        
         dirpath = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_DATA, self.data.Namespaces.MIXING_TIME)
         filepath = os.path.join(dirpath, 'results.db')
         
-        table, query = self.sql.generate_sql_statements('GlobalMixingTimeRawData', {
-            'Frame' : frames,
-            'Entropy' : entropy,
-            'Variance' : variance
-        })
+        table, _ = self.sql.generate_sql_statements('GlobalMixingTimeRawData', {
+                'Frame' : frames[0],
+                'Entropy' : entropy[0],
+                'Variance' : variance[0]
+            })
         
         self.sql.read_or_write(filepath, table, "write")
-        self.sql.read_or_write(filepath, query, "write")
+        
+        for i in range(len(frames)):
+            
+            table, query = self.sql.generate_sql_statements('GlobalMixingTimeRawData', {
+                'Frame' : frames[i],
+                'Entropy' : entropy[i],
+                'Variance' : variance[i]
+            })
+            self.sql.read_or_write(filepath, query, "write")
         
         return filepath
     

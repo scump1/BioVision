@@ -24,12 +24,13 @@ class LiveViewAcquisition(QThread):
         super().__init__()
         
         self.camera = camera
+        self.running = True
         
     def run(self):
         try:
             while self.running:
                 
-                numpy_image = self.camera.get_image
+                numpy_image = self.camera.get_latest_image
                 frame = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
 
                 height, width, _ = frame.shape
@@ -38,7 +39,7 @@ class LiveViewAcquisition(QThread):
 
                 self.raw_frame.emit(numpy_image) # Emit raw frame for recording
                 self.frame.emit(q_image)  # Emit the frame for GUI update
-                time.sleep(1/32) # 32 FPS
+                time.sleep(1/24) # 24 FPS
                 
         except Exception as e:
             print(f"Error in LiveViewAcquisition thread: {e}")
@@ -99,8 +100,8 @@ class LiveViewForm(QWidget):
 
     def live_view_start(self):
 
-        if not self.cam_obj:
-            self.logger.warning("LiveView - Camera object not grabbable.")
+        if not self.camera.image_acquisition_thread.is_alive():
+            self.logger.warning("LiveView - Camera image acquisition thread not alive.")
             return
         
         try:

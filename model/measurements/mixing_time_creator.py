@@ -34,7 +34,11 @@ class MixingTimeCreator:
         
         # We create the current topmost Measurement Folder here
         self.data.add_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER, folder_path, namespace=self.data.Namespaces.MIXING_TIME)
-        os.makedirs(folder_path)
+        
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        else:
+            self.logger.error("Error in file path handling.")
         
         self.create_subfolders(folder_path)
     
