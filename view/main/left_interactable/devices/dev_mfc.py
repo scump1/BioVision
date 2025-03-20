@@ -26,7 +26,8 @@ class UIMFCWidget(QWidget):
         
         self.massflow_set.connect(self.on_apply_finished)
         
-        self.massflow = None
+        self.massflow : float = None
+        self.valve_status : bool = True
         
         self.polltimer = QTimer()
         self.polltimer.setInterval(1000)
@@ -54,11 +55,15 @@ class UIMFCWidget(QWidget):
         open_close_widget = QWidget()
         open_close_layout = QVBoxLayout()
 
-        description_label = QLabel('Open or Close the Valve of the MFC completely.')
-        open_close_button = QPushButton()
+        description_label = QLabel('Close the Valve of the MFC completely.')
+        description_label2 = QLabel('Reopnenig the Valve sets the last known massflow target.')
+        
+        self.open_close_button = QPushButton('Close')
+        self.open_close_button.clicked.connect(self._open_close_valve)
         
         open_close_layout.addWidget(description_label)
-        open_close_layout.addWidget(open_close_button)
+        open_close_layout.addWidget(description_label2)
+        open_close_layout.addWidget(self.open_close_button)
         
         open_close_widget.setLayout(open_close_layout)
         
@@ -116,7 +121,7 @@ class UIMFCWidget(QWidget):
         self.data.add_data(self.data.Keys.MFC_SETTINGS, self.massflow_box.value(), self.data.Namespaces.MFC)
         self.mfc.add_task(self.mfc.States.SETTING_SETTER_STATE, 0)
 
-    def update_progress(self, value, text):
+    def update_progress(self, value : int, text : str):
         """Update progress bar and label text."""
         self.progressbar.setValue(value)
         self.progress_label.setText(text)
@@ -160,6 +165,22 @@ class UIMFCWidget(QWidget):
             self.currentmassflow.setText(f"{self.massflow:.2f}")
         except Exception as e:
             self.logger.warning(f"Could not read MFC massflow: {e}")
+    
+    def _open_close_valve(self):
+        
+        # From opnening to closing
+        if self.valve_status == True:
+            self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
+            self.valve_status = False
+            
+            self.open_close_button.setText('Reopen')
+            
+
+        elif self.valve_status == False:
+            self.mfc.add_task(self.mfc.States.OPEN_VALVE, 0)
+            self.valve_status = True
+            
+            self.open_close_button.setText('Close')
     
     def closeEvent(self, event: QCloseEvent):
         try:

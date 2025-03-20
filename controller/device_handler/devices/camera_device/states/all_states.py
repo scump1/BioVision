@@ -26,23 +26,14 @@ class MTEmptyCalibrationState(State):
             if not dir_path:
                 return
             
-            self.device.cam.stream_on()
-            raw_img = self.device.cam.data_stream[0].get_image()
+            numpy_image = self.device.get_image
             
-            if raw_img is not None:
-                rgb_image = raw_img.convert("RGB")
-                numpy_image = rgb_image.get_numpy_array()
-                numpy_image = numpy_image
-                
-                filename = f"EmptyCalibration.bmp"
-                filepath = os.path.join(dir_path, filename)
-                
-                cv2.imwrite(filepath, numpy_image)
-                
-                self.data.add_data(self.data.Keys.EMPTY_CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MIXING_TIME)
-                
-            else:
-                self.logger.warning("Failed to capture image: No data received from capture stream.")
+            filename = f"EmptyCalibration.bmp"
+            filepath = os.path.join(dir_path, filename)
+            
+            cv2.imwrite(filepath, numpy_image)
+            
+            self.data.add_data(self.data.Keys.EMPTY_CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MIXING_TIME)
                 
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")
@@ -63,24 +54,16 @@ class MTFilledCalibrationState(State):
             
             if not dir_path:
                 return
+           
+            numpy_image = self.device.get_image
             
-            self.device.cam.stream_on()
-            raw_img = self.device.cam.data_stream[0].get_image()
+            filename = f"FilledCalibration.bmp"
+            filepath = os.path.join(dir_path, filename)
             
-            if raw_img is not None:
-                rgb_image = raw_img.convert("RGB")
-                numpy_image = rgb_image.get_numpy_array()
-                numpy_image = numpy_image
-                
-                filename = f"FilledCalibration.bmp"
-                filepath = os.path.join(dir_path, filename)
-                
-                cv2.imwrite(filepath, numpy_image)
-                
-                self.data.add_data(self.data.Keys.FILLED_CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MIXING_TIME)
-                
-            else:
-                self.logger.warning("Failed to capture image: No data received from capture stream.")
+            cv2.imwrite(filepath, numpy_image)
+            
+            self.data.add_data(self.data.Keys.FILLED_CALIBRATION_IMAGE_PATH, filepath, self.data.Namespaces.MIXING_TIME)
+
                 
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")
@@ -111,10 +94,7 @@ class MTImagecaptureState(State):
             self.terminate_img_cap()
         
     def start_img_cap(self, img_per_int: int, interval: int):
-        
-        # First we open up the cam stream
-        self.device.cam.stream_on()
-        
+
         path = self.data.get_data(self.data.Keys.CURRENT_MIXINGTIME_FOLDER_IMAGES, namespace=self.data.Namespaces.MIXING_TIME)
         
         self.scheduler.add_job(self.single_img_capture, 'interval', args=[img_per_int, path], seconds=interval)
@@ -124,29 +104,20 @@ class MTImagecaptureState(State):
         
         if self.scheduler:
             self.scheduler.shutdown()
-            
-        self.device.cam.stream_off()
         
     def single_img_capture(self, img_per_int: int, path: str):
         
         self.logger.info("Trying to capture Image.")
 
         while img_per_int > 0:
-            raw_img = self.device.cam.data_stream[0].get_image()
             
-            if raw_img is not None:
-                rgb_image = raw_img.convert("RGB")
-                numpy_image = rgb_image.get_numpy_array()
-                numpy_image = numpy_image
-                
-                filename = f"MT_Image_{self.overall_count}.bmp"
-                filepath = os.path.join(path, filename)
-                
-                cv2.imwrite(filepath, numpy_image)
+            numpy_image = self.device.get_image
+            
+            filename = f"MT_Image_{self.overall_count}.bmp"
+            filepath = os.path.join(path, filename)
+            
+            cv2.imwrite(filepath, numpy_image)
 
-            else:
-                self.logger.warning("Failed to capture image: No data received from capture stream.")
-                
             self.overall_count += 1
             img_per_int -= 1
 
@@ -289,32 +260,25 @@ class ImageCaptureState(State):
             
             if not area_enum == self.device.AreaOfInterest.ALL:
                 x1, x2, y1, y2 = self.device.area_of_interests.get(area_enum, None)
-          
-            # First we open up the cam stream
-            self.device.cam.stream_on()
-        
-            while img_per_int > 0:
-                raw_img = self.device.cam.data_stream[0].get_image()
-                
-                if raw_img is not None:
-                    rgb_image = raw_img.convert("RGB")
-                    numpy_image = rgb_image.get_numpy_array()
-                    
-                    if not area_enum == self.device.AreaOfInterest.ALL:
-                        numpy_image = numpy_image[x1:x2, y1:y2]
-                    
-                    filename = f"Image_{formatted_time}_{img_count}.bmp"
-                    filepath = os.path.join(self.path, filename)
-                    
-                    cv2.imwrite(filepath, numpy_image)
-                    
-                    self.res_man.register_resource(f"Image_{formatted_time}_{img_count}.bmp", filepath, space=self.resourcespace)
 
-                else:
-                    self.logger.warning("Failed to capture image: No data received from capture stream.")
-                    
+            while img_per_int > 0:
+            
+                numpy_image = self.device.get_image
+                
+                if not area_enum == self.device.AreaOfInterest.ALL:
+                    numpy_image = numpy_image[x1:x2, y1:y2]
+                
+                filename = f"Image_{formatted_time}_{img_count}.bmp"
+                filepath = os.path.join(self.path, filename)
+                
+                cv2.imwrite(filepath, numpy_image)
+                
+                self.res_man.register_resource(f"Image_{formatted_time}_{img_count}.bmp", filepath, space=self.resourcespace)
+
                 img_count += 1
                 img_per_int -= 1
+                
+                time.sleep(1/(img_count + img_per_int)) # Making sure we euqally space the image acqusition over a second
 
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, False, self.data.Namespaces.MEASUREMENT)
@@ -326,9 +290,6 @@ class ImageCaptureState(State):
             
         except Exception as e:
             self.logger.warning(f"Image capturing not working properly: {e}.")
-            
-        finally:
-            self.device.cam.stream_off()
                 
 class HealthCheckState(State):
     
@@ -343,9 +304,7 @@ class HealthCheckState(State):
                 self.data.add_data(self.data.Keys.CAMERA, False, namespace=self.data.Namespaces.DEVICES)
                 return False      
             
-            self.device.cam.stream_on() 
-            raw_img = self.device.cam.data_stream[0].get_image()
-            self.device.cam.stream_off()
+            raw_img = self.device.get_image # Accessing the image property from the image_acquisiton_thread
 
             if not raw_img:
                 self.data.add_data(self.data.Keys.CAMERA, False, namespace=self.data.Namespaces.DEVICES)

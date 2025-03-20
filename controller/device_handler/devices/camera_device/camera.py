@@ -1,5 +1,6 @@
 
 import threading
+import time
 
 import gxipy as gx
 
@@ -13,9 +14,10 @@ from operator_mod.logger.global_logger import Logger
 from controller.device_handler.devices.state_machine_template import Device
 
 class Camera(Device):
-    
+        
     _instance = None
     _lock = threading.Lock()
+    _image_lock = threading.Lock()
     
     # Exposing the enums to the outside
     class States(Enum):
@@ -51,7 +53,7 @@ class Camera(Device):
     area_of_interests = {
         AreaOfInterest.ALL: [],
         AreaOfInterest.COLUMN: [600, 2500, 1700, 2100],
-        AreaOfInterest.COLUMN_WITH_TOP: [600, 3000, 1700, 2175]
+        AreaOfInterest.COLUMN_WITH_TOP: [600, 3000, 1600, 2200]
     }
 
     def __new__(cls, *args, **kwargs):
@@ -78,8 +80,31 @@ class Camera(Device):
         self.await_capture_start_event = threading.Event()
         self.mt_await_capture_start_event = threading.Event()
         
+        self.latest_image = None
+        self.new_frame_image = None
+        
         self._connect()
         self.setupCamera()
+
+        # Start the image stream
+        self.cam.stream_on()
+        
+        self.image_acqusition_running = True # Only sets to False in __del__
+        
+        self.image_acquisition_thread = threading.Thread(target=self.image_acqusition_thread_worker)
+        self.image_acquisition_thread.daemon = True
+        self.image_acquisition_thread.start()
+
+    def __del__(self):
+        
+        if self.image_acquisition_thread.is_alive():
+            self.image_acqusition_running = False
+            self.image_acquisition_thread.join()
+            
+        if self.cam:
+            self.cam.stream_off()
+            
+        self.shutdown()
 
     ### Camera logic ###
     def _connect(self):
@@ -136,6 +161,33 @@ class Camera(Device):
                     self.logger.info(f"Setting {key} is not writable.")
         else:
             self.logger.error("Not connected.")
+    
+    ### Seperate image acquisiton thread to offload saving/writing image files from the image acqusition loop
+    def image_acqusition_thread_worker(self):
+
+        while self.image_acqusition_running:
+            try:
+                image = self.cam.data_stream[0].get_image()
+                
+                if image is not None:
+                    image = image.convert('RGB')
+                    new_frame = image.get_numpy_array()
+                    
+                    with self._image_lock:
+                        # Using a two buffer approach to minimize race conditions
+                        self.latest_image = self.new_frame_image
+                    
+                    self.new_frame_image = new_frame
+                        
+            except:
+                self.logger.warning('Error in image acquisiton thread, image skipped.')
+            finally:
+                time.sleep(1/32) # 32 Frames per second
+    
+    @property
+    def get_image(self):
+        with self._image_lock:
+            return self.latest_image
     
     @property
     def get_camera(self):

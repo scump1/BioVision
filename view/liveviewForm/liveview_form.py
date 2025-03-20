@@ -24,30 +24,24 @@ class LiveViewAcquisition(QThread):
         super().__init__()
         
         self.camera = camera
-        self.running = True
         
     def run(self):
         try:
-            
-            self.camera.stream_on()  # Start streaming
             while self.running:
-                raw_img = self.camera.data_stream[0].get_image()
-                rgb_image = raw_img.convert("RGB")
-                numpy_image = rgb_image.get_numpy_array()
+                
+                numpy_image = self.camera.get_image
                 frame = cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
 
                 height, width, _ = frame.shape
                 bytes_per_line = 3 * width
-                q_image = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+                q_image = QImage(frame.data, width, height, bytes_per_line, QImage.Format.Format_BGR888)
 
                 self.raw_frame.emit(numpy_image) # Emit raw frame for recording
                 self.frame.emit(q_image)  # Emit the frame for GUI update
-                time.sleep(0.0166) # 32 FPS
+                time.sleep(1/32) # 32 FPS
                 
         except Exception as e:
             print(f"Error in LiveViewAcquisition thread: {e}")
-        finally:
-            self.camera.stream_off()  # Stop streaming when the thread stops
 
     def stop_acquisition(self):
         self.running = False
@@ -66,7 +60,7 @@ class LiveViewForm(QWidget):
         self.logger = Logger("Application").logger
         self.camera = Camera.get_instance()
         self.data = InMemoryData()
-        
+
         self.acquisiton_thread = None
         self.video_writer = None
         self.recording = False
@@ -77,7 +71,6 @@ class LiveViewForm(QWidget):
         
         # Try to get camera object
         self.camera.add_task(self.camera.States.LIVE_VIEW_STATE, 0)
-        self.cam_obj = self.camera.get_camera
 
     def setupForm(self):
         
@@ -111,7 +104,7 @@ class LiveViewForm(QWidget):
             return
         
         try:
-            self.acquisition_thread = LiveViewAcquisition(self.cam_obj)
+            self.acquisition_thread = LiveViewAcquisition(self.camera)
             self.acquisition_thread.frame.connect(self.update_frame)
             self.acquisition_thread.raw_frame.connect(self.record_frame)
             self.acquisition_thread.start()
