@@ -164,7 +164,6 @@ class Camera(Device):
 
         while self.image_acqusition_running:
             try:
-                
                 image = self.cam.data_stream[0].get_image()
                 
                 if image is not None:
@@ -176,9 +175,7 @@ class Camera(Device):
 
             except:
                 self.logger.warning('Error in image acquisiton thread, image skipped.')
-            finally:
-                time.sleep(1/32) # 32 Frames per second
-    
+                
         self.cam.stream_off()
 
     @property

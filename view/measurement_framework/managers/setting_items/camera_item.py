@@ -56,9 +56,9 @@ class CameraItemWidget(QWidget):
         # Interval
         interval = QLabel("Interval")
         self.interval_count = QDoubleSpinBox()
-        self.interval_count.setMinimum(0.001)
-        self.interval_count.setMaximum(9999)
-        self.interval_count.setValue(5)
+        self.interval_count.setMinimum(1)
+        self.interval_count.setMaximum(999)
+        self.interval_count.setValue(1)
         
         self.interval_count.valueChanged.connect(self.add_setting)
         

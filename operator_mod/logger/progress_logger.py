@@ -36,10 +36,10 @@ class ProgressLogger:
             ValueError: If targetscore is not a positive integer.
         """
         if not name:
-            raise ValueError("Score space name must be a non-empty string.")
+            return
         if targetscore <= 0:
-            raise ValueError("Target score must be a positive integer.")
-
+            return
+        
         if name not in self.spaces:
             self.spaces[name] = targetscore
             self.space_logger[name] = 0
@@ -57,9 +57,9 @@ class ProgressLogger:
             KeyError: If the score space name does not exist.
         """
         if targetscore <= 0:
-            raise ValueError("Target score must be a positive integer greater than 0.")
+            return
         if name not in self.spaces:
-            raise KeyError(f"Score space '{name}' does not exist.")
+            return
 
         self.spaces[name] = targetscore
 
@@ -84,7 +84,7 @@ class ProgressLogger:
             del self.space_logger[name]
             del self.metadata[name]
         else:
-            raise KeyError(f"Score space '{name}' does not exist.")
+            return
 
     def progress_space(self, name: str, increment: int):
         """Increments the progress of a score space.
@@ -98,9 +98,9 @@ class ProgressLogger:
             KeyError: If the score space name does not exist.
         """
         if increment < 0:
-            raise ValueError("Increment must be a positive integer.")
+            return
         if name not in self.space_logger:
-            raise KeyError(f"Score space '{name}' does not exist.")
+            return
 
         self.space_logger[name] = min(self.space_logger[name] + increment, self.spaces[name])
 
@@ -119,9 +119,9 @@ class ProgressLogger:
             KeyError: If the score space name does not exist.
         """
         if value < 0:
-            raise ValueError("Increment must be a positive integer.")
+            return
         if name not in self.space_logger:
-            raise KeyError(f"Score space '{name}' does not exist.")
+            return
 
         if value > self.spaces[name]:
             self.space_logger[name] = self.spaces[name]
@@ -163,7 +163,7 @@ class ProgressLogger:
             if name in self.spaces:
                 return [name, self.spaces[name], self.space_logger[name]]
             else:
-                raise KeyError(f"Score space '{name}' does not exist.")
+                return
         
     def get_metadata(self, name = None) -> list | dict:
         """Retrieves metadata for a score space or all score spaces.
@@ -178,7 +178,7 @@ class ProgressLogger:
             if name in self.metadata:
                 return self.metadata[name]
             else:
-                raise KeyError(f"Score space '{name}' does not exist.")
+                return
         
         return self.metadata
 
