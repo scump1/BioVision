@@ -20,6 +20,8 @@ class Camera(Device):
     _lock = threading.Lock()
     _image_lock = threading.Lock()
     
+    FRAMES_PER_SECOND : int = 10
+    
     # Exposing the enums to the outside
     class States(Enum):
         HEALTH_CHECK_STATE = 1
@@ -160,6 +162,10 @@ class Camera(Device):
     def image_acqusition_thread_worker(self):
         
         # Start the image stream
+        if self.cam is None:
+            self.logger.error("No camera connected.")
+            return
+        
         self.cam.stream_on()
 
         while self.image_acqusition_running:

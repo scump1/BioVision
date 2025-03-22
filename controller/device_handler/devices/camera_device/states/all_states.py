@@ -115,9 +115,9 @@ class MTImagecaptureState(State):
             self.overall_count += 1
             img_per_int -= 1
             
-            processingtime = time.time() - start_time
+            sleeptime = (1-0.1)/self.device.FRAMES_PER_SECOND - (time.time() - start_time)
             
-            time.sleep((1-0.1)/32 - processingtime)
+            time.sleep(sleeptime) if sleeptime > 0 else 0.08 # Roughly approximated 12.5 FPS
             
 class LiveViewState(State):
     
@@ -237,10 +237,10 @@ class ImageCaptureState(State):
                 img_per_int -= 1
                 
                 endtime = time.time()
-                processingtime = endtime - start_time
+                sleeptime = (1-0.1)/self.device.FRAMES_PER_SECOND - (endtime - start_time)
                 
                 # This means we wait for the given Framerate 32 minus the actual time it took for the image and some residue per frame to return to scheduler
-                time.sleep((1-0.1)/32 - processingtime) 
+                time.sleep(sleeptime) if sleeptime > 0 else 0.08 
                                 
             if self.lightmode:
                 self.data.add_data(self.data.Keys.LIGHTMODE, False, self.data.Namespaces.MEASUREMENT)
