@@ -4,6 +4,13 @@ A dedicated software using ImageAnalysis for applied science in process engineer
 
 ## Version Log
 
+### Version 0.6:
+    - Now supports asynchronous camera image aquisition and image fetching with triple buffered approach
+    - Refined control and visuals in measurements configuration
+    - Upgraded visuals for most widgets
+
+    - A lot of bugfixes
+
 ### Version 0.5.2:
 
     - Reworking the measurement handler & worker system based on algorithm (none, bubble, pellet, mixing time...)
