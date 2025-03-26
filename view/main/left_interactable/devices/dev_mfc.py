@@ -30,8 +30,8 @@ class UIMFCWidget(QWidget):
         self.valve_status : bool = True
         
         self.polltimer = QTimer()
-        self.polltimer.setInterval(1000)
         self.polltimer.timeout.connect(self.poll_current_massflow)
+        self.polltimer.setInterval(1000)
 
     def setupWidget(self):
         
@@ -126,8 +126,9 @@ class UIMFCWidget(QWidget):
         
         self.update_progress(20, 'Applying settings...')
         
-        # Changing the config
-        self.configuration.change_configuration(self.configuration.Devices.MFC, self.configuration.MFCSettings.MASSFLOW, self.massflow_box.value())
+        # Changing the config provided we have a project open to write the config change
+        if self.data.get_data(self.data.Keys.PROJECT_PATH, self.data.Namespaces.PROJECT_MANAGEMENT) is not None:
+            self.configuration.change_configuration(self.configuration.Devices.MFC, self.configuration.MFCSettings.MASSFLOW, self.massflow_box.value())
         
         # Start worker thread
         self.data.add_data(self.data.Keys.MFC_SETTINGS, self.massflow_box.value(), self.data.Namespaces.MFC)
@@ -175,21 +176,22 @@ class UIMFCWidget(QWidget):
         try:
             self.massflow = self.data.get_data(self.data.Keys.MFC_MASSFLOW, self.data.Namespaces.MFC)
             self.currentmassflow.setText(f"{self.massflow:.2f}")
+    
         except Exception as e:
             self.logger.warning(f"Could not read MFC massflow: {e}")
     
-    def _open_close_valve(self):
+    def _open_close_valve(self, overwrite_status : bool = False):
         
         # From opnening to closing
-        if self.valve_status == True:
+        if self.valve_status == True or overwrite_status == True:
+                        
             self.mfc.add_task(self.mfc.States.CLOSE_VALVE, 0)
             self.valve_status = False
             
             self.open_close_button.setText('Reopen')
             self.current_valve_status.setText('Closed')
             
-
-        elif self.valve_status == False:
+        elif self.valve_status == False or overwrite_status == False:
             self.mfc.add_task(self.mfc.States.OPEN_VALVE, 0)
             self.valve_status = True
             

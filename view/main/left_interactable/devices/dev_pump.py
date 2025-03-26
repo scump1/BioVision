@@ -214,8 +214,10 @@ class UIPumpWidget(QWidget):
             
             self.pump.add_task(self.pump.States.SYRINGE_SETTER, 0)
             
-            self.configuration_manager.change_configuration(self.configuration_manager.Devices.PUMP, self.configuration_manager.PumpSettings.SYRINGE_DIAMETER, diameter)
-            self.configuration_manager.change_configuration(self.configuration_manager.Devices.PUMP, self.configuration_manager.PumpSettings.SYRINGE_LENGTH, length)
+            # We change the config provided we have an open project
+            if self.data.get_data(self.data.Keys.PROJECT_PATH, self.data.Namespaces.PROJECT_MANAGEMENT) is not None:
+                self.configuration_manager.change_configuration(self.configuration_manager.Devices.PUMP, self.configuration_manager.PumpSettings.SYRINGE_DIAMETER, diameter)
+                self.configuration_manager.change_configuration(self.configuration_manager.Devices.PUMP, self.configuration_manager.PumpSettings.SYRINGE_LENGTH, length)
             
         except Exception as e:
             self.logger.warning(f'Exception in pump syringe setter: {e}.')
