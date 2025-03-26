@@ -147,6 +147,12 @@ class UIMFCWidget(QWidget):
         
         if success:
             self.update_progress(100, 'Successful.')
+            
+            # The Opening / Closing Logic
+            self.open_close_button.setText('Close')
+            self.current_valve_status.setText('Opened')
+            self.valve_status = True
+            
         else:
             self.progress_label.setStyleSheet('color: red;')
             self.update_progress(100, 'Unsuccessful.')

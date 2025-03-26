@@ -175,7 +175,7 @@ class Camera(Device):
                 if image is not None:
                     image = image.convert('RGB')
                     new_frame = image.get_numpy_array()
-                    
+                
                     with self._image_lock:
                         self.latest_image = new_frame
 

@@ -149,6 +149,14 @@ class Pump(Device):
         self.pump.dispense(float(volume), float(flowrate))    
         self._wait_dipsense_fluid(volume, flowrate)
     
+    def start_calibration(self) -> None:
+        
+        try:
+            self.pump.calibrate()
+            self._wait_calibration_finished()
+        except Exception as e:
+            self.logger.error(f"Exception during calibration routine: {e}.")
+    
     def stop_pump(self):
         
         try:

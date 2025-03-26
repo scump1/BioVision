@@ -164,7 +164,6 @@ class ImageCaptureState(State):
             self.start_img_cap(img_per_int, interval)
             
             while datetime.datetime.now() < self.runtime_target and not self.terminated:
-                self.logger.info("Camera - Image Capturing working.")
                 time.sleep(1)
                 
         except Exception as e:
@@ -210,7 +209,7 @@ class ImageCaptureState(State):
                 time.sleep(3)
 
             img_count = 0
-            formatted_time = datetime.datetime.now().strftime("%H_%M_%S")
+            formatted_time = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 
             # Grabbing the area of iterest
             area_enum = self.data.get_data(self.data.Keys.AREA_OF_INTERST, self.data.Namespaces.CAMERA)
@@ -266,15 +265,15 @@ class HealthCheckState(State):
                 self.data.add_data(self.data.Keys.CAMERA, False, namespace=self.data.Namespaces.DEVICES)
                 return False      
             
-            raw_img = self.device.get_latest_image # Accessing the image property from the image_acquisiton_thread
+            img = self.device.get_latest_image # Accessing the image property from the image_acquisiton_thread
 
-            if raw_img is None:
+            if img is None:
                 self.data.add_data(self.data.Keys.CAMERA, False, namespace=self.data.Namespaces.DEVICES)
                 return False
             
             self.data.add_data(self.data.Keys.CAMERA, True, namespace=self.data.Namespaces.DEVICES)
 
-            del raw_img
+            del img
             return True
             
         except Exception as e:
