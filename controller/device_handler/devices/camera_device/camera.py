@@ -73,7 +73,7 @@ class Camera(Device):
         self.configurations = ConfigurationManager.get_instance()
         
         # Standard Value
-        self.data.add_data(self.data.Keys.AREA_OF_INTERST, self.AreaOfInterest.COLUMN, self.data.Namespaces.CAMERA)
+        self.data.add_data(self.data.Keys.AREA_OF_INTERST, self.AreaOfInterest.ALL, self.data.Namespaces.CAMERA)
         
         # The camera device
         self.cam = None

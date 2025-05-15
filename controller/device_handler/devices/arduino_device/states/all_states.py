@@ -33,12 +33,14 @@ class SettingsSetterState(State):
         if self.device.serial_con:
             try:
                 # Send the temperature command
-                self.device.send_command("T")
-                response = self.device.send_command(str(temperature))
+                _ = self.device.send_command("T")
+                response_event = self.device.send_command(str(temperature))
+                response_event.wait()
+                response = self.device.get_response
                 
                 self.logger.info(f"Sent command: T with temperature {temperature}.")
 
-                if response[0] == str(temperature):
+                if float(response[0]) == temperature:
                     self.logger.info("Temperature setting set.")
                 else:
                     self.logger.warning(f"Unexpected response: {response}.")
@@ -52,32 +54,22 @@ class SettingsSetterState(State):
 class SensorPolling(State):
     
     def run_logic(self):
-        
-        self.sched = BackgroundScheduler()
-        
+          
         # Synchronization
         self.device.await_polling_start_event.wait()
-        
-        if self.device.serial_con:
-            self.sched.add_job(self._polling, trigger='interval', seconds=15)
-            self.sched.start()
-
+ 
         while datetime.datetime.now() < self.runtime_target and not self.terminated:
-            time.sleep(1)
-
-        # This is the final code
-        self.sched.pause()
-        self.sched.remove_all_jobs()
-        self.sched.shutdown(wait=False)
-
-        del self.sched
+            self._polling()
+            time.sleep(17) # 17 seconds intervals
 
     def _polling(self):
         
         try:
-            response = self.device.send_command("R") # Request data from Arduino
+            response_event = self.device.send_command("R") # Request data from Arduino
+            response_event.wait()
+            response = self.device.get_response
             
-            if response:
+            if response and len(response) == 3:
                 self.data_writer.arduino_data_writer(response)
                 if self.live_recording:
                     self.data.add_data(self.data.Keys.LIVE_TEMPERATURE, response, self.data.Namespaces.MEASUREMENT)
@@ -130,8 +122,12 @@ class HealthCheckState(State):
             if self.device.serial_con is None:
                 self.data.add_data(self.data.Keys.ARDUINO, False, namespace=self.data.Namespaces.DEVICES)
                 return False
+
+            # Creating the event for the response
             
-            response = self.device.send_command("H")
+            response_event = self.device.send_command("H")
+            response_event.wait()
+            response = self.device.get_response
 
             if response[0] == "Y":
                 self.data.add_data(self.data.Keys.ARDUINO, True, namespace=self.data.Namespaces.DEVICES)

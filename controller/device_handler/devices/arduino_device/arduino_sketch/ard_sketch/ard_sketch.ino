@@ -52,6 +52,8 @@ void pollSerial() {
   if (Serial.available() > 0) {
     char command = Serial.read();  // Read the command character
 
+    unsigned long start = millis();
+
     switch (command) {
       case 'H':  // Health Check
         Serial.println("Y");
@@ -59,7 +61,13 @@ void pollSerial() {
 
       case 'T':  // Temperature Set Command
         Serial.println("Y");
-        while (!Serial.available());  // Wait until a float value is available
+        while (!Serial.available()) {
+          
+          if (millis() - start > 1000) {
+            return;
+          }
+
+        };  // Wait until a float value is available
         target_temperature = Serial.parseFloat();
         Serial.println(target_temperature);
         break;
@@ -72,7 +80,13 @@ void pollSerial() {
 
       case 'S':  // Light Switch Command
         Serial.println("Y");
-        while (!Serial.available());  // Wait until a float value is available
+        while (!Serial.available()) {
+          
+          if (millis() - start > 1000) {
+            return;
+          }
+
+        };  // Wait until a float value is available
         angle = Serial.parseInt();
         adjust_servo_state();
         Serial.println(angle);

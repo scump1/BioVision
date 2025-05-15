@@ -45,7 +45,6 @@ class Arduino(Device):
         
         # Serial Management
         self.serial_command_queue = queue.Queue()
-        self.serial_lock = threading.Lock()
         self.serial_worker_thread = threading.Thread(target=self._serial_worker)
         self.serial_worker_thread.daemon = True
         self.serial_worker_thread.start()
@@ -54,6 +53,8 @@ class Arduino(Device):
         self.events = EventManager()
         self.data = InMemoryData()
         
+        self.response_received = None
+                
         # Modifying the amount of arduino states here -> for lightswitching
         self.executor._max_workers = 2
         
@@ -65,7 +66,7 @@ class Arduino(Device):
 
         try:
             if self.serial_con is None:
-                self.serial_con = serial.Serial("COM6", 115200, timeout=3)
+                self.serial_con = serial.Serial("COM6", 115200, timeout=10)
                 time.sleep(3)
                 
             if self.serial_con is not None:
@@ -83,49 +84,61 @@ class Arduino(Device):
     def _serial_worker(self):
         """Runs the serial communication and collects multi-line responses when necessary."""
         while True:
+            timeout = 10
             command, response_event, response_list = self.serial_command_queue.get()
-
-            with self.serial_lock:
                 
-                if self.serial_con.writable():
-                    try:
-                        # Send command
-                        self.serial_con.write(f"{command}\n".encode())
-                        self.logger.info(f"Sent command: {command}")
+            if self.serial_con.writable():
+                try:
+                    # Send command
+                    self.serial_con.write(f"{command}\n".encode())
+                    self.logger.info(f"Sent command: {command}")
 
-                        # Handle multi-line response
-                        if command == "R":
-                            expected_lines = 3  # "R" command returns 3 lines
-                        else:
-                            expected_lines = 1  # Other commands return only 1 line
+                    # Handle multi-line response
+                    if command == "R":
+                        expected_lines = 3  # "R" command returns 3 lines
+                    else:
+                        expected_lines = 1  # Other commands return only 1 line
 
-                        for _ in range(expected_lines):
-                            response = self.serial_con.readline().decode().strip()
-                            if response:
-                                response_list.append(response)
-                                self.logger.info(f"Received response: {response}")
+                    # EVERY Command induces a response, we wait for it here
+                    while not self.serial_con.in_waiting > 0 and timeout >= 0:
+                        timeout -= 0.01
+                        time.sleep(0.01)
+                        
+                    if timeout <= 0:
+                        self.logger.error("Timeout in serial response.")
+                        continue
+                    
+                    # Grabbing the appropiate lines (this is kinda unclean tho)
+                    for _ in range(expected_lines):
+                        response = self.serial_con.readline().decode().strip()
+                        if response:
+                            response_list.append(response)
+                            self.logger.info(f"Received response: {response}")
 
-                    except serial.SerialException as e:
-                        self.logger.error(f"Serial error: {e}")
-                    except Exception as e:
-                        self.logger.error(f"Unexpected error: {e}")
+                except serial.SerialException as e:
+                    self.logger.error(f"Serial error: {e}")
+                except Exception as e:
+                    self.logger.error(f"Unexpected error: {e}")
+            
+                finally:
+                    self.response_received = response_list
+                    response_event.set()
 
-            # Signal that the response is ready
-            response_event.set()
-
-    def send_command(self, command):
+    def send_command(self, command) -> threading.Event:
         """
         Places a command in the queue and waits for the full response.
-        Returns a list of responses if multiple lines are expected.
+        Returns:
+            response_event : a threading event that gets set when a response is received, upon which a response can be catched via the property
         """
+        response_list = []        
         response_event = threading.Event()
-        response_list = []
-        
         self.serial_command_queue.put((command, response_event, response_list))
-        response_event.wait()  # Wait until response is ready
 
-        return response_list if response_list else None
+        return response_event
 
+    @property
+    def get_response(self):
+        return self.response_received
 
     @classmethod
     def get_instance(cls):
